@@ -1,0 +1,7 @@
+# dune init project traffic_sim
+# OCAMLPARAM: unset
+# Shared cache: enabled-except-user-rules
+# Shared cache location: /Users/andrew/.cache/dune/db
+# Workspace root:
+# /Users/andrew/Documents/Cornell/CS3110/cs3110-final-project/traffic_sim
+# Auto-detected concurrency: 11
