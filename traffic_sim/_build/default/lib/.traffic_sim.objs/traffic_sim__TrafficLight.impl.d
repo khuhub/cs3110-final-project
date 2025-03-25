@@ -1,1 +1,1 @@
-lib/trafficLight.ml:
+lib/trafficlight.ml:

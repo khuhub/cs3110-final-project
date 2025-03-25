@@ -1,17 +1,21 @@
-include CarQueue
+open Car
 
-(**Module representing a lane in the intersection*)
+type t
 
-type num = int
-type queue = CarQueue.t
-type rate = int
+val empty_lane : t
+(** A lane without any cars. *)
 
-exception Invalid_route
+val peek_car : t -> Car.t
+(** [peek_car t] is the car at the head of the lane [t]. *)
 
-val make_route : num -> num -> num * num
-(** [make_route x y] creates a tuple of lane numbers representing a route from
-    the start [x] to the destination [y]. Throws a [Invalid_route] if the route
-    is invalid.*)
+val push_car : t -> Car.t -> unit
+(** [push_car t c] adds car [c] to the end of the queue. *)
 
-val set_rate_enter : int -> rate
-(** [set_rate_enter x]* sets the rate that cars enter the intersection to [x]*)
+val pop_car : t -> t
+(** [pop_car t ] is the first car in the lane removed. *)
+
+val get_rate : t -> float
+(** [get_rate t] is the rate of traffic in lane [t]. *)
+
+val change_rate : t -> float -> t
+(** [change_rate t r] is the lane [t] with a rate of [r]. *)
