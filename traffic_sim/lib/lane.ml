@@ -1,7 +1,7 @@
 open Car
 
-exception NoCar
-exception InvalidRate
+exception No_car
+exception Invalid_rate
 
 type t = {
   queue : Car.t Queue.t;
@@ -22,7 +22,9 @@ let peek_car { queue } =
 let push_car car { queue } = Queue.push car queue
 
 let pop_car { queue } =
-  if Queue.is_empty queue then raise NoCar else Queue.pop queue
+  if Queue.is_empty queue then raise No_car else Queue.pop queue
 
 let get_rate { rate } = rate
-let change_rate t rate = { t with rate }
+
+let change_rate t rate =
+  if rate < 0. then raise Invalid_rate else { t with rate }

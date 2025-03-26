@@ -9,5 +9,5 @@ module Intersection = Traffic_sim__Intersection
 (** @canonical Traffic_sim.Lane *)
 module Lane = Traffic_sim__Lane
 
-(** @canonical Traffic_sim.Trafficlight *)
-module Trafficlight = Traffic_sim__Trafficlight
+(** @canonical Traffic_sim.TrafficLight *)
+module TrafficLight = Traffic_sim__TrafficLight

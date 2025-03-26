@@ -2,7 +2,7 @@ open Car
 
 type lane_light_pair = {
   lane : Lane.t;
-  light : Trafficlight.TrafficLight.t;
+  light : TrafficLight.TrafficLight.t;
 }
 
 type t = {
