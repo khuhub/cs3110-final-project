@@ -20,7 +20,9 @@ type t = {
       [n] is norht, east, south, or west.
     - [i.cars_in_intersection] is the list of cars currently passing through the
       intersection.
-    - [i.steps] is how many *)
+    - [i.steps] is how many steps have elapsed.
+
+    RI: [steps >= 0]*)
 
 let get_steps { steps } = steps
 let step i lst = i
