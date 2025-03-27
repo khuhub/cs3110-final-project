@@ -24,6 +24,6 @@ val pop_car : t -> (Car.t * t) option
 val get_rate : t -> float
 (** [get_rate t] is the rate of traffic flow in lane [t]. *)
 
-val change_rate : t -> float -> t
+val change_rate : t -> float -> t option
 (** [change_rate t r] is a copy of lane [t] with a rate of traffic flow of [r].
-    - Raises: [Invalid_rate] if [r < 0.]. *)
+*)
