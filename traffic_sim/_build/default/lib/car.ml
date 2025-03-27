@@ -17,6 +17,9 @@ module type CarSig = sig
 
   val straight_car : t
   (** A car with the intention to continue straight. *)
+
+  val random_car : t
+  (** A car with a random direction*)
 end
 
 module Car : CarSig with type t = turn = struct
@@ -29,4 +32,8 @@ module Car : CarSig with type t = turn = struct
   let left_car = Left
   let right_car = Right
   let straight_car = Straight
+
+  let random_car =
+    let num = Random.int 3 in
+    if num = 0 then Left else if num = 1 then Right else Straight
 end

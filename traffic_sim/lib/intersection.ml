@@ -23,8 +23,9 @@ type t = {
     - [i.steps] is how many steps have elapsed.
 
     RI: [steps >= 0]*)
-
+let empty = failwith "Not yet implemented"
 let get_steps { steps } = steps
 let step i lst = i
 let random_step i = i
 let string_of_intersection i = ""
+let list_of_lane_lights t = failwith "Not yet implemented"

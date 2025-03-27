@@ -1,8 +1,8 @@
 open Car
 
 type t
-(** [t] is a lane with a rate of traffic flow, where cars of type [Car.t] enter
-    and leave in FIFO (first-in, first-out) order. *)
+(** [t] is a lane with a rate of traffic flow, where cars of type [Car.t] enter,
+    wait, and leave in FIFO (first-in, first-out) order. *)
 
 exception No_car
 (** Raised when an operation that accesses some car in a lane is attempted on an

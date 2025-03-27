@@ -4,6 +4,11 @@ type t
 (** [t] is a traffic intersection composed of multiple lanes that tracks the
     pasage of time via step increments. *)
 
+val empty : t
+(** [empty] is the intial state of the world. All lanes are empty, and traffic
+    lights in the north and south directions are green and those in the east and
+    west directions are red. *)
+
 val get_steps : t -> int
 (** [get_steps t] is the number of steps that have elapsed in intersection [t].
 *)
@@ -21,3 +26,7 @@ val random_step : t -> t
 val string_of_intersection : t -> string
 (** [string_of_intersection t] is the string representation of intersection [t].
 *)
+
+val list_of_lane_lights : t -> (Lane.t * TrafficLight.TrafficLight.t) list
+(** [list_lane_light_pairs t] is the list of the all pairs of lights and lanes
+    in the intersection in a consistent order. *)
