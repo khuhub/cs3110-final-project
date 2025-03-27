@@ -3,6 +3,11 @@ open Car
 type t
 (** [t] is a traffic intersection composed of multiple lanes that tracks the
     pasage of time via step increments. *)
+val empty_intersection : t
+
+val create : Car.t list list -> t
+(** [create lst] creates an intersection with each list of cars in [lst] being
+    added to its corresponding lane. *)
 
 val empty : t
 (** [empty] is the intial state of the world. All lanes are empty, and traffic
