@@ -29,30 +29,16 @@ type t = {
 
     RI: [steps >= 0] and [List.length lanes = 4]*)
 
-let empty_intersection =
-  {
-    lanes =
-      [
-        {
-          lane = Lane.empty_lane;
-          light = TrafficLight.TrafficLight.create TrafficLight.Red;
-        };
-        {
-          lane = Lane.empty_lane;
-          light = TrafficLight.TrafficLight.create TrafficLight.Green;
-        };
-        {
-          lane = Lane.empty_lane;
-          light = TrafficLight.TrafficLight.create TrafficLight.Red;
-        };
-        {
-          lane = Lane.empty_lane;
-          light = TrafficLight.TrafficLight.create TrafficLight.Green;
-        };
-      ];
-    cars_in_intersection = [];
-    steps = 0;
-  }
+let empty =
+  let lst =
+    List.(
+      List.init 4 (fun _ ->
+          {
+            lane = Lane.empty_lane;
+            light = TrafficLight.TrafficLight.create Red;
+          }))
+  in
+  { lanes = lst; cars_in_intersection = []; steps = 0 }
 
 let add_cars lanes carlstlst =
   List.iter2
@@ -61,7 +47,7 @@ let add_cars lanes carlstlst =
     lanes carlstlst
 
 let create lst =
-  let i = empty_intersection in
+  let i = empty in
   add_cars i.lanes lst;
   i
 
@@ -94,18 +80,10 @@ let string_of_lane { lane; light } =
         | Right -> "Right car"
         | Straight -> "Straight car"
       end)
+(* let string_of i = Printf.sprintf "North: [ %s ]\n\ East: [ %s ]\n\ South: [
+   %s ]\n\ West: [ %s ]\n\ In intersection: [ %s ]" (string_of_lane (List.nth
+   i.lanes 0)) (string_of_lane (List.nth i.lanes 1)) (string_of_lane (List.nth
+   i.lanes 2)) (string_of_lane (List.nth i.lanes 3)) (match
+   i.cars_in_intersection with | [] -> "" | h :: t -> "") *)
 
-let string_of_intersection i =
-  Printf.sprintf
-    "North: [ %s ]\n\
-     East: [ %s ]\n\
-     South: [ %s ]\n\
-     West: [ %s ]\n\
-     In intersection: [ %s ]"
-    (string_of_lane (List.nth i.lanes 0))
-    (string_of_lane (List.nth i.lanes 1))
-    (string_of_lane (List.nth i.lanes 2))
-    (string_of_lane (List.nth i.lanes 3))
-    (match i.cars_in_intersection with
-    | [] -> ""
-    | h :: t -> "")
+let list_lane_lights t = failwith "Not Yet Implemented"
