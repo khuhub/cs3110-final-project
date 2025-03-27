@@ -24,10 +24,10 @@ let peek_car { queue } =
 
 let push_car car { queue } = List.append queue car
 
-let pop_car { queue } =
+let pop_car { queue; rate } =
   match queue with
   | [] -> None
-  | h :: t -> Some (h, t)
+  | h :: t -> Some (h, { queue = t; rate })
 
 let get_rate { rate } = rate
 

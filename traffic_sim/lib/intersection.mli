@@ -28,8 +28,8 @@ val random_step : t -> t
 (** [random_step t] is the resulting intersection after [t] increments one time
     step. Random cars are added to the end of each lane. *)
 
-val string_of_intersection : t -> string
-(** [string_of_intersection t] is the string representation of intersection [t].
+(* val string_of : t -> string
+(** [string_of t] is the string representation of intersection [t]. *)
 *)
 
 val list_of_lane_lights : t -> (Lane.t * TrafficLight.TrafficLight.t) list

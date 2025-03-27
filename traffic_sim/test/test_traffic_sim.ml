@@ -3,10 +3,7 @@ open Traffic_sim
 
 let tests =
   "Test Suite"
-  >::: [
-         ( " " >:: fun _ ->
-           print_endline
-             Intersection.(empty_intersection |> string_of_intersection) );
-       ]
+  >::: [ (* ( " " >:: fun _ -> print_endline Intersection.(empty_intersection |>
+            string_of_intersection) ); *) ]
 
 let _ = run_test_tt_main tests
