@@ -46,8 +46,8 @@ let add_cars lanes carlstlst =
     lanes carlstlst
 
 let create lst =
-  let i = empty in
-  add_cars i.lanes lst
+  (* let i = empty in add_cars i.lanes lst; *)
+  failwith "Not_implemented"
 
 let get_steps { steps } = steps
 
@@ -55,9 +55,10 @@ let get_steps { steps } = steps
     its corresponding lane. *)
 
 let step i carlstlst =
-  if List.length carlstlst <> 4 then
-    raise (Invalid_argument "Must have four elements.")
-(* { i with steps = i.steps + 1; lanes = add_cars i.lanes carlstlst } *)
+  (* if List.length carlstlst <> 4 then raise (Invalid_argument "Must have four
+     elements.") *)
+  (* { i with steps = i.steps + 1; lanes = add_cars i.lanes carlstlst } *)
+  failwith "Not_implemented"
 
 let random_step i = i
 
@@ -72,15 +73,26 @@ let string_of_lane { lane; light } =
     (match Lane.peek_car lane with
     | None -> "none"
     | Some c -> begin
-        match c with
+        match Car.get_turn c with
         | Left -> "Left car"
         | Right -> "Right car"
         | Straight -> "Straight car"
       end)
-(* let string_of i = Printf.sprintf "North: [ %s ]\n\ East: [ %s ]\n\ South: [
-   %s ]\n\ West: [ %s ]\n\ In intersection: [ %s ]" (string_of_lane (List.nth
-   i.lanes 0)) (string_of_lane (List.nth i.lanes 1)) (string_of_lane (List.nth
-   i.lanes 2)) (string_of_lane (List.nth i.lanes 3)) (match
-   i.cars_in_intersection with | [] -> "" | h :: t -> "") *)
+
+let string_of_intersection i =
+  Printf.sprintf
+    "North: [ %s ]\n\
+    \ East: [ %s ]\n\
+    \ South: [\n\
+    \   %s ]\n\
+    \ West: [ %s ]\n\
+    \ In intersection: [ %s ]"
+    (string_of_lane (List.nth i.lanes 0))
+    (string_of_lane (List.nth i.lanes 1))
+    (string_of_lane (List.nth i.lanes 2))
+    (string_of_lane (List.nth i.lanes 3))
+    (match i.cars_in_intersection with
+    | [] -> ""
+    | h :: t -> "")
 
 let list_lane_lights t = failwith "Not Yet Implemented"

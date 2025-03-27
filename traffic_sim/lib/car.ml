@@ -20,9 +20,12 @@ module type CarSig = sig
 
   val random_car : t
   (** A car with a random direction*)
+
+  val get_turn : t -> turn
+  (**Gets the direction the car wants to turn*)
 end
 
-module Car : CarSig with type t = turn = struct
+module Car : CarSig = struct
   type t = turn
   (** AF: A value [car] of type [t] represents a car with it's intended
       direction represented as a [turn].
@@ -36,4 +39,6 @@ module Car : CarSig with type t = turn = struct
   let random_car =
     let num = Random.int 3 in
     if num = 0 then Left else if num = 1 then Right else Straight
+
+  let get_turn t = t
 end

@@ -22,7 +22,7 @@ let peek_car { queue } =
   | [] -> None
   | h :: t -> Some h
 
-let push_car car { queue } = List.append queue car
+let push_car car t = { t with queue = t.queue @ [ car ] }
 
 let pop_car { queue; rate } =
   match queue with

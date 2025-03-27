@@ -3,7 +3,6 @@ open Car
 type t
 (** [t] is a traffic intersection composed of multiple lanes that tracks the
     pasage of time via step increments. *)
-val empty_intersection : t
 
 val create : Car.t list list -> t
 (** [create lst] creates an intersection with each list of cars in [lst] being
@@ -28,10 +27,9 @@ val random_step : t -> t
 (** [random_step t] is the resulting intersection after [t] increments one time
     step. Random cars are added to the end of each lane. *)
 
-(* val string_of : t -> string
+val string_of_intersection : t -> string
 (** [string_of t] is the string representation of intersection [t]. *)
-*)
 
-val list_of_lane_lights : t -> (Lane.t * TrafficLight.TrafficLight.t) list
-(** [list_lane_light_pairs t] is the list of the all pairs of lights and lanes
-    in the intersection in a consistent order. *)
+val list_lane_lights : t -> (Lane.t * TrafficLight.TrafficLight.t) list
+(** [list_lane_lights t] is the list of the all pairs of lights and lanes in the
+    intersection in a consistent order. *)
