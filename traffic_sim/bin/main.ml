@@ -1,1 +1,1 @@
-let () = print_endline "Hello, World!"
+let () = TheView.TheView.render 1
