@@ -41,15 +41,13 @@ let empty =
   { lanes = lst; cars_in_intersection = []; steps = 0 }
 
 let add_cars lanes carlstlst =
-  List.iter2
-    (fun { lane } carlst ->
-      List.iter (fun car -> Lane.push_car car lane) carlst)
+  List.map2
+    (fun { lane } carlst -> List.map (fun car -> Lane.push_car car lane) carlst)
     lanes carlstlst
 
 let create lst =
   let i = empty in
-  add_cars i.lanes lst;
-  i
+  add_cars i.lanes lst
 
 let get_steps { steps } = steps
 
@@ -59,8 +57,7 @@ let get_steps { steps } = steps
 let step i carlstlst =
   if List.length carlstlst <> 4 then
     raise (Invalid_argument "Must have four elements.")
-  else add_cars i.lanes carlstlst;
-  { i with steps = i.steps + 1 }
+(* { i with steps = i.steps + 1; lanes = add_cars i.lanes carlstlst } *)
 
 let random_step i = i
 

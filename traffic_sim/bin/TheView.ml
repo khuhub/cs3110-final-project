@@ -31,6 +31,16 @@ module TheView : TheViewSig = struct
       strings. *)
   let create_canvas w = Array.make_matrix w w " "
 
+  (** rotates a point 90 degrees around the center of the given grid*)
+  let rotate_90 t (a, b) =
+    let cx, cy = center t in
+    (cx - (b - cy), cy + (a - cx))
+
+  let rec textify_queue (q : Lane.t) =
+    match Lane.pop_car q with
+    | None -> []
+    | Some (c, q) -> c :: textify_queue q
+
   (** [textify wld] is the representation of [wld] in the string matrix.*)
   let textify wld =
     let canv = create_canvas 51 in

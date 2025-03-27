@@ -21,7 +21,7 @@ val peek_car : t -> Car.t option
 val push_car : Car.t -> t -> t
 (** [push_car t c] adds car [c] to the back of lane [t]. *)
 
-val pop_car : t -> Car.t
+val pop_car : t -> (Car.t * Car.t list) option
 (** [pop_car t ] removes and returns the first car in lane [t].
     - Raises: [No_car] if lane [t] is empty. *)
 
