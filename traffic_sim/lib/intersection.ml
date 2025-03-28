@@ -56,7 +56,24 @@ let add_cars i carlst_arr =
   in
   { i with lanes }
 
-let create carlst_arr = add_cars empty carlst_arr
+let get_lane_pair i index = Array.get i.lanes index
+
+let set_rate_one rate index i =
+  let { lane; light } = get_lane_pair i index in
+  { lane = Lane.change_rate lane rate; light }
+
+let set_rate rate index i =
+  let lane = get_lane_pair i index in
+  Array.set i.lanes index { lane with lane = Lane.change_rate lane.lane rate };
+  i
+
+let set_rate_whole rate_arr i =
+  let lane_arr = Array.mapi (fun index r -> set_rate_one r index i) rate_arr in
+  { i with lanes = lane_arr }
+
+let create carlst_arr rate_arr =
+  add_cars empty carlst_arr |> set_rate_whole rate_arr
+
 let get_steps { steps } = steps
 
 (** [car_to_steps_left c] is how many steps a given car [c] needs to take to
@@ -86,6 +103,11 @@ let can_enter_intersection c index oncoming_lane cars_in_intersection =
       | Some c -> Car.get_turn c = Left)
       && index < 2
 
+(** [spawn_car i index] returns [true] with probability equal to the spawn rate
+    of the lane at [index] in [i.lanes], and [false] otherwise. *)
+let spawn_car i index =
+  Random.float 1.0 < Lane.get_rate (get_lane_pair i index).lane
+
 (** [increment_light lane] is the resulting lane pair [lane] after the traffic
     light has incremeneted. *)
 let increment_light lane =
@@ -110,24 +132,35 @@ let increment_intersection_cars i =
 (** [new_lanes i new_cars_in_intersection] is the resutling array of lanes after
     one step. *)
 let increment_lanes i new_cars_in_intersection =
+  let arr =
+    Array.mapi
+      (fun index { lane; light } ->
+        match Lane.peek_car lane with
+        | None -> increment_light { lane; light }
+        | Some c ->
+            if
+              TrafficLight.can_go (car_to_steps_left c) light
+              && can_enter_intersection c index
+                   (get_lane_pair i ((index + 2) mod 4))
+                   new_cars_in_intersection
+            then (
+              let steps_left = car_to_steps_left c in
+              Array.set new_cars_in_intersection index
+                (Some { car = c; steps_left; enter_lane = index });
+              increment_light
+                { lane = snd (Option.get (Lane.pop_car lane)); light })
+            else increment_light { lane; light })
+      i.lanes
+  in
   Array.mapi
-    (fun index { lane; light } ->
-      match Lane.peek_car lane with
-      | None -> increment_light { lane; light }
-      | Some c ->
-          if
-            TrafficLight.can_go (car_to_steps_left c) light
-            && can_enter_intersection c index
-                 (Array.get i.lanes ((index + 2) mod 4))
-                 new_cars_in_intersection
-          then (
-            let steps_left = car_to_steps_left c in
-            Array.set new_cars_in_intersection index
-              (Some { car = c; steps_left; enter_lane = index });
-            increment_light
-              { lane = snd (Option.get (Lane.pop_car lane)); light })
-          else increment_light { lane; light })
-    i.lanes
+    (fun index lane_pair ->
+      if spawn_car i index then
+        {
+          lane_pair with
+          lane = Lane.push_car (Car.random_car ()) lane_pair.lane;
+        }
+      else lane_pair)
+    arr
 
 let step carlst_arr i =
   if Array.length carlst_arr <> 4 then
@@ -142,12 +175,17 @@ let step carlst_arr i =
 
 let random_step i =
   let carlst_arr =
-    Array.init 4 (fun x ->
-        if Random.float 1.0 < Lane.get_rate (Array.get i.lanes x).lane then
-          [ Car.random_car () ]
-        else [])
+    Array.init 4 (fun x -> if spawn_car i x then [ Car.random_car () ] else [])
   in
   step carlst_arr i
+
+let cars_in_intersection i =
+  Array.map
+    (fun car ->
+      match car with
+      | None -> None
+      | Some { car } -> Some car)
+    i.cars_in_intersection
 
 let string_of_lane { lane; light } =
   Printf.sprintf "Light: %s;  Head: %s"
@@ -162,14 +200,6 @@ let string_of_intersection_car = function
       Printf.sprintf "%s%i%s" (Car.string_of_car car) enter_lane
         (string_of_int steps_left)
 
-let cars_in_intersection i =
-  Array.map
-    (fun car ->
-      match car with
-      | None -> None
-      | Some { car } -> Some car)
-    i.cars_in_intersection
-
 let string_of_intersection i =
   Printf.sprintf
     "N: [ %s ]\n\
@@ -178,10 +208,10 @@ let string_of_intersection i =
      W: [ %s ]\n\n\
      In intersection: [ %s ]\n\
      Steps: %s"
-    (string_of_lane (Array.get i.lanes 0))
-    (string_of_lane (Array.get i.lanes 1))
-    (string_of_lane (Array.get i.lanes 2))
-    (string_of_lane (Array.get i.lanes 3))
+    (string_of_lane (get_lane_pair i 0))
+    (string_of_lane (get_lane_pair i 1))
+    (string_of_lane (get_lane_pair i 2))
+    (string_of_lane (get_lane_pair i 3))
     (Array.fold_left
        (fun acc car ->
          Printf.sprintf "%s | %s" acc (string_of_intersection_car car))

@@ -16,6 +16,7 @@ let tests =
                create
                  (Array.init 4 (fun i ->
                       List.init i (fun x -> Car.Car.random_car ())))
+                 (Array.init 4 (fun i -> (float_of_int i +. 10.) /. 13.))
                |> string_of_intersection);
            assert_equal 1 1 );
          ( "Test step" >:: fun _ ->
@@ -30,6 +31,7 @@ let tests =
              Intersection.create
                (Array.init 4 (fun i ->
                     List.init i (fun x -> Car.Car.random_car ())))
+               (Array.init 4 (fun i -> (float_of_int i +. 10.) /. 13.))
            in
            Printf.printf "STEP 2:\n\n%s\n\n%s\n\n%s\n\n%s\n\n\n\n"
              (Intersection.string_of_intersection i)
@@ -47,6 +49,28 @@ let tests =
                |> step (Array.init 4 (fun _ -> []))
                |> string_of_intersection);
 
+           assert_equal 1 1 );
+         ( "Test spawn" >:: fun _ ->
+           let i =
+             Intersection.create
+               (Array.init 4 (fun _ -> []))
+               (Array.init 4 (fun _ -> 1.))
+           in
+           Printf.printf "SPAWN:\n\n%s\n\n%s\n\n%s\n\n%s\n\n\n\n"
+             (Intersection.string_of_intersection i)
+             Intersection.(
+               i |> step (Array.init 4 (fun _ -> [])) |> string_of_intersection)
+             Intersection.(
+               i
+               |> step (Array.init 4 (fun _ -> []))
+               |> step (Array.init 4 (fun _ -> []))
+               |> string_of_intersection)
+             Intersection.(
+               i
+               |> step (Array.init 4 (fun _ -> []))
+               |> step (Array.init 4 (fun _ -> []))
+               |> step (Array.init 4 (fun _ -> []))
+               |> string_of_intersection);
            assert_equal 1 1 );
        ]
 

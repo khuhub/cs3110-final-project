@@ -4,9 +4,14 @@ type t
 (** [t] is a traffic intersection composed of multiple lanes that tracks the
     pasage of time via step increments. *)
 
-val create : Car.t list array -> t
-(** [create arr] creates an intersection with each list of cars in [arr] being
-    added to its corresponding lane. *)
+val set_rate : float -> int -> t -> t
+(** [set_rate f i t] is a intersection with the the rate of the lane at index
+    [i] in intersection [t] set to [f]. *)
+
+val create : Car.t list array -> float array -> t
+(** [create c r] creates an intersection where each of its lanes have its rate
+    set to the corresponding float in [r] and start off with each car in each
+    sublist in [c] being pushed to its corresponding lane. *)
 
 val empty : t
 (** [empty] is the intial state of the world. All lanes are empty, and traffic
