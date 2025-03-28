@@ -27,3 +27,7 @@ val get_rate : t -> float
 val change_rate : t -> float -> t
 (** [change_rate t r] is a copy of lane [t] with a rate of traffic flow of [r].
 *)
+
+val get_output : t -> int
+(** [get_output t] is the number of cars which have exited the lane since the
+    start of the simulation. *)

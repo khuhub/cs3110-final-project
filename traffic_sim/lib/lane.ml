@@ -5,6 +5,7 @@ exception Invalid_rate
 type t = {
   queue : Car.t list;
   rate : float;
+  output : int;
 }
 (** AF: A value [lane] of type [t] represents a lane.
     - [lane.queue] is the queue of cars at the lane. The first car in the queue
@@ -15,7 +16,7 @@ type t = {
 
     RI: [lane.rate >= 0] *)
 
-let empty_lane = { queue = []; rate = 0. }
+let empty_lane = { queue = []; rate = 0.; output = 0 }
 
 let peek_car { queue } =
   match queue with
@@ -24,12 +25,14 @@ let peek_car { queue } =
 
 let push_car (car : Car.t) t = { t with queue = t.queue @ [ car ] }
 
-let pop_car { queue; rate } =
+let pop_car { queue; rate; output } =
   match queue with
   | [] -> None
-  | h :: t -> Some (h, { queue = t; rate })
+  | h :: t -> Some (h, { queue = t; rate; output = output + 1 })
 
 let get_rate { rate } = rate
 
 let change_rate t rate =
   if rate < 0. then raise Invalid_rate else { t with rate }
+
+let get_output { output } = output

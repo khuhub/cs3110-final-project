@@ -28,6 +28,6 @@ let help =
 let () =
   TheView.TheView.render
     (Intersection.create [| []; []; []; [] |] [| 0.2; 0.2; 0.2; 0.2 |])
-    (* (Intersection.create [| gencars; gencars; gencars; gencars |] [| 0.0;
-       0.0; 0.0; 0.0 |]) *)
-    1
+    (* (Intersection.create [| []; []; gencars; gencars |] [| 0.0; 0.0; 0.0; 0.0
+       |]) *)
+    5

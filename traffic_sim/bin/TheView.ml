@@ -161,14 +161,30 @@ module TheView : TheViewSig = struct
       print_endline ""
     done
 
+  let calc_traffic_flow wld =
+    let lls = Intersection.list_lane_lights wld in
+    List.map
+      (fun e ->
+        if Lane.get_output (fst e) = 0 then 0.0
+        else
+          float_of_int (Lane.get_output (fst e))
+          /. float_of_int (Intersection.get_steps wld))
+      lls
+
   let rec render wld sps =
     print_canv (textify wld);
     print_endline
       ("Steps: "
       ^ string_of_int (Intersection.get_steps wld)
       ^ "\tSteps Per Second: " ^ string_of_int sps);
+    List.fold_left2
+      (fun acc a b -> acc ^ a ^ string_of_float b)
+      "Traffic Flow (cars exited / step)"
+      [ "\n  N: "; "\n  E: "; "\n  S: "; "\n  W: " ]
+      (List.rev (calc_traffic_flow wld))
+    |> print_endline;
     let new_wld = Intersection.random_step wld in
-    print_string [] (Intersection.string_of_intersection wld);
+    (* print_string [] (Intersection.string_of_intersection wld); *)
     Unix.sleepf (1. /. float_of_int sps);
     erase Screen;
     render new_wld sps
