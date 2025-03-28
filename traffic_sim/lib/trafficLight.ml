@@ -4,6 +4,11 @@ type color =
   | Green
   | Yellow
 
+let string_of_color = function
+  | Green -> "G"
+  | Yellow -> "Y"
+  | Red -> "R"
+
 module type TrafficLightSig = sig
   type t
   (** A value of type [t] is a traffic light with a current color and a
@@ -16,9 +21,15 @@ module type TrafficLightSig = sig
   val get_color : t -> color
   (** [get_color t] is the current color of traffic light [t]. *)
 
+  val can_go : int -> t -> bool
+
   val increment : t -> t
   (** [increment t] is the resulting traffic light after [t] increments one time
       step. *)
+
+  val string_of_traffic_light : t -> string
+  (** [string_of_traffic_light t] is the string representation of traffic light
+      [t]. *)
 end
 
 module TrafficLight : TrafficLightSig = struct
@@ -40,10 +51,20 @@ module TrafficLight : TrafficLightSig = struct
 
   let get_color { color } = color
 
+  let can_go i { color; steps_left } =
+    let open Car in
+    match (color, steps_left) with
+    | Green, _ -> true
+    | Yellow, n -> n > i
+    | Red, _ -> false
+
   let increment { color; steps_left } =
     match (color, steps_left) with
     | Red, 0 -> { color = Green; steps_left = 10 }
     | Green, 0 -> { color = Yellow; steps_left = 2 }
     | Yellow, 0 -> { color = Red; steps_left = 10 }
     | _, n -> { color; steps_left = n - 1 }
+
+  let string_of_traffic_light t =
+    Printf.sprintf "%s%i" (string_of_color t.color) t.steps_left
 end
