@@ -42,10 +42,10 @@ module TheView : TheViewSig = struct
     let w = 8 * !unit_x in
     Array.make_matrix (w + 1) (w + 1) ([], " ")
 
-  (** rotates a point 90 degrees around the center of the given grid*)
+  (** rotates a point 90 degrees clockwise around the center of the given grid*)
   let rot90 t (a, b) =
     let cx, cy = center t in
-    (cx - (b - cy), cy + (a - cx))
+    (cx + (b - cy), cy - (a - cx))
 
   let sym_set_cell (t : t) (a, b) str =
     set_cell t (a, b) str;
@@ -94,14 +94,35 @@ module TheView : TheViewSig = struct
                     List.map (fun elem -> (rot90 t (fst elem), snd elem)) e)
                   k)
     in
-    let rot_lanes = rot_lanes lanes in
-    List.iter (fun e -> set_cell t (fst e) (snd e)) (List.flatten rot_lanes)
+    let rot_lanes = List.flatten (rot_lanes lanes) in
+    let rot_rot_rot_lanes =
+      List.map (fun e -> (fst e |> rot90 t |> rot90 t, snd e)) rot_lanes
+    in
+    List.iter (fun e -> set_cell t (fst e) (snd e)) rot_rot_rot_lanes
 
   let calcSize () =
     let w, h = ANSITerminal.size () in
     let smaller = if w > h then h else w in
     (smaller / 8) - (smaller / 8 mod 2)
-  (* let add_inter_cars wld = let ne = let se = let sw = let *)
+
+  let add_inter_cars canv wld =
+    let cx, cy = center canv in
+    let half = !unit_x / 2 in
+    let ne_nw_sw_se =
+      [|
+        (cx - half, cy - half);
+        (cx + half, cy - half);
+        (cx + half, cy + half);
+        (cx - half, cy + half);
+      |]
+    in
+    let carz = Intersection.cars_in_intersection wld in
+    Array.iter2
+      (fun e1 e2 ->
+        match e2 with
+        | None -> ()
+        | Some k -> set_cell canv e1 ([], "0"))
+      ne_nw_sw_se carz
 
   (** [textify wld] is the representation of [wld] in the string matrix.*)
   let textify wld =
@@ -122,8 +143,7 @@ module TheView : TheViewSig = struct
       done
     done;
     add_lanes canv (Intersection.list_lane_lights wld) l1_loc;
-    (* let cars_inter = Intersection.cars_in_intersection wld in add_inter_cars
-       (Intersection.cars_in_intersection wld); *)
+    add_inter_cars canv wld;
     canv
 
   let assert_RI t = failwith "Not yet implemented"
@@ -141,14 +161,14 @@ module TheView : TheViewSig = struct
     done
 
   let rec render wld sps =
-    Unix.sleepf (1. /. float_of_int sps);
-    erase Screen;
     print_canv (textify wld);
     print_endline
       ("Steps: "
       ^ string_of_int (Intersection.get_steps wld)
       ^ "\tSteps Per Second: " ^ string_of_int sps);
     let new_wld = Intersection.random_step wld in
-    (* print_string [] (Intersection.string_of_intersection wld); *)
+    print_string [] (Intersection.string_of_intersection wld);
+    Unix.sleepf (1. /. float_of_int sps);
+    erase Screen;
     render new_wld sps
 end
