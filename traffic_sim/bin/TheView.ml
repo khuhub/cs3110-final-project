@@ -157,7 +157,6 @@ module TheView : TheViewSig = struct
           (Background Black :: fst canv.(x).(y))
           (" " ^ snd canv.(x).(y))
       done;
-      print_string [ Background Black ] " ";
       print_endline ""
     done
 
