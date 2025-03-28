@@ -95,13 +95,12 @@ let can_enter_intersection c index oncoming_lane cars_in_intersection =
           | None -> true
           | Some { car } -> Car.get_turn car <> Left)
         cars_in_intersection
-  | Left ->
-      (Array.for_all (fun i_car -> i_car = None) cars_in_intersection
+  | Left -> (
+      Array.for_all (fun i_car -> i_car = None) cars_in_intersection
       &&
       match Lane.peek_car oncoming_lane.lane with
       | None -> true
-      | Some c -> Car.get_turn c = Left)
-      && index < 2
+      | Some c -> Car.get_turn c = Left && index < 2)
 
 (** [spawn_car i index] returns [true] with probability equal to the spawn rate
     of the lane at [index] in [i.lanes], and [false] otherwise. *)
