@@ -80,9 +80,9 @@ let get_steps { steps } = steps
     exit the intersection. *)
 let car_to_steps_left c =
   match Car.get_turn c with
-  | Right -> 1
-  | Straight -> 2
-  | Left -> 3
+  | Right -> 0
+  | Straight -> 1
+  | Left -> 2
 
 (** [can_enter_intersection c oncoming_lane i] is if car [c] can enter the
     intersection. *)
@@ -124,12 +124,12 @@ let increment_intersection_cars i =
       | Some c ->
           if c.steps_left > 0 then
             Array.set new_arr
-              ((c.steps_left + 3) mod 4)
+              ((index + 3) mod 4)
               (Some { c with steps_left = c.steps_left - 1 }))
     i.cars_in_intersection;
   new_arr
 
-(** [new_lanes i new_cars_in_intersection] is the resutling array of lanes after
+(** [new_lanes i new_cars_in_intersection] is the resulting array of lanes after
     one step. *)
 let increment_lanes i new_cars_in_intersection =
   let arr =
@@ -195,27 +195,32 @@ let string_of_lane { lane; light } =
     | Some c -> Car.string_of_car c)
 
 let string_of_intersection_car = function
-  | None -> ""
+  | None -> "   "
   | Some { car; steps_left; enter_lane } ->
       Printf.sprintf "%s%i%s" (Car.string_of_car car) enter_lane
         (string_of_int steps_left)
 
 let string_of_intersection i =
   Printf.sprintf
-    "N: [ %s ]\n\
+    "_______________________________\n\
+     N: [ %s ]\n\
      E: [ %s ]\n\
      S: [ %s ]\n\
-     W: [ %s ]\n\n\
-     In intersection: [ %s ]\n\
-     Steps: %s"
+     W: [ %s ]\n\n\n\
+     %s \n\n\
+     Steps: %s\n\
+     _______________________________"
     (string_of_lane (get_lane_pair i 0))
     (string_of_lane (get_lane_pair i 1))
     (string_of_lane (get_lane_pair i 2))
     (string_of_lane (get_lane_pair i 3))
-    (Array.fold_left
-       (fun acc car ->
-         Printf.sprintf "%s | %s" acc (string_of_intersection_car car))
-       "" i.cars_in_intersection)
+    (string_of_intersection_car (Array.get i.cars_in_intersection 0)
+    ^ "  |  "
+    ^ string_of_intersection_car (Array.get i.cars_in_intersection 1)
+    ^ "\n"
+    ^ string_of_intersection_car (Array.get i.cars_in_intersection 3)
+    ^ "  |  "
+    ^ string_of_intersection_car (Array.get i.cars_in_intersection 2))
     (string_of_int i.steps)
 
 let list_lane_lights t =
