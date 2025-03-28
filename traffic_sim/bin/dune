@@ -1,4 +1,4 @@
 (executable
  (public_name traffic_sim)
  (name main)
- (libraries traffic_sim unix))
+ (libraries traffic_sim unix ANSITerminal))

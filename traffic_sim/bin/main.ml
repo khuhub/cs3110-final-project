@@ -1,3 +1,3 @@
 open Traffic_sim.Intersection
 
-let () = TheView.TheView.render empty 1
+let () = TheView.TheView.render empty 10
