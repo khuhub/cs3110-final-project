@@ -60,6 +60,12 @@ module TheView : TheViewSig = struct
   let map_list_loc ((a, b) : int * int) q =
     List.mapi (fun index e -> ((a + index, b), e)) q
 
+  let car_to_string car =
+    match Car.Car.get_turn car with
+    | Left -> ([ cyan ], "L")
+    | Right -> ([ magenta ], "R")
+    | Straight -> ([ blue ], "S")
+
   let rec textify_queue loc (q : Lane.t * TrafficLight.TrafficLight.t) =
     let light_color =
       match TrafficLight.TrafficLight.get_color (snd q) with
@@ -73,14 +79,7 @@ module TheView : TheViewSig = struct
       | Some (c, q) -> c :: get_queue q
     in
     let carz = get_queue (fst q) in
-    (List.map
-       (fun e ->
-         match Car.Car.get_turn e with
-         | Left -> ([ cyan ], "L")
-         | Right -> ([ magenta ], "R")
-         | Straight -> ([ blue ], "S"))
-       carz
-    |> map_list_loc loc)
+    (List.map car_to_string carz |> map_list_loc loc)
     @ [ ((fst loc - !unit_x, snd loc), light_color) ]
 
   let rec add_lanes t lane_light_list loc =
@@ -123,7 +122,7 @@ module TheView : TheViewSig = struct
       (fun e1 e2 ->
         match e2 with
         | None -> ()
-        | Some k -> set_cell canv e1 ([], "0"))
+        | Some k -> set_cell canv e1 (car_to_string k))
       ne_nw_sw_se carz
 
   (** [textify wld] is the representation of [wld] in the string matrix.*)
