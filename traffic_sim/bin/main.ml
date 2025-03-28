@@ -1,5 +1,7 @@
 open Traffic_sim
 
+let () = Random.self_init ()
+
 let gencars =
   [
     Car.Car.random_car ();
@@ -28,4 +30,4 @@ let () =
     (Intersection.create [| []; []; []; [] |] [| 0.5; 0.5; 0.5; 0.5 |])
     (* (Intersection.create [| gencars; gencars; gencars; gencars |] [| 0.0;
        0.0; 0.0; 0.0 |]) *)
-    4
+    1

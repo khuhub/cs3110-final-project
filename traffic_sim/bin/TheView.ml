@@ -2,6 +2,8 @@ open Traffic_sim
 open Unix
 open ANSITerminal
 
+let () = Random.self_init ()
+
 module type TheViewSig = sig
   type t
 
