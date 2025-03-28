@@ -21,7 +21,12 @@ module TheView : TheViewSig = struct
     let a, b = size t in
     (a / 2, b / 2)
 
-  let set_cell (t : t) (a, b) (style, str) = t.(a).(b) <- (style, str)
+  (** [set_cell t (a, b) (style, str)] is the canvas with cell at [(a, b)] in
+      the grid set to [(style, str)]. TEMPORARY bug fix: if a, b are out of
+      bounds, do nothing. *)
+  let set_cell (t : t) (a, b) (style, str) =
+    let w, h = size t in
+    if a > w || b > h then () else t.(a).(b) <- (style, str)
 
   (** [unit_x] is the size of a single distance unit in the grid. Should be used
       to keep track of relative sizes. Must be divisible by 2. *)
@@ -93,9 +98,9 @@ module TheView : TheViewSig = struct
 
   (** [textify wld] is the representation of [wld] in the string matrix.*)
   let textify wld =
-    let canv = create_canvas 4 in
+    let canv = create_canvas 8 in
     let cx, cy = center canv in
-    let l1_loc = (cx + !unit_x + 1, cy - (!unit_y / 2)) in
+    let l1_loc = (cx + !unit_x + 1, cy - (!unit_x / 2)) in
     (* let lane_lights = Intersection.list_of_lane_lights wld in assert
        (List.length lane_lights = 4); *)
     set_cell canv (cx, cy) ([], "+");
@@ -135,5 +140,6 @@ module TheView : TheViewSig = struct
       ^ string_of_int (Intersection.get_steps wld)
       ^ "\tSteps Per Second: " ^ string_of_int sps);
     let new_wld = Intersection.random_step wld in
+    (* print_string [] (Intersection.string_of_intersection wld); *)
     render new_wld sps
 end
