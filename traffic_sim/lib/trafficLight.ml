@@ -46,7 +46,7 @@ module TrafficLight : TrafficLightSig = struct
   let create col =
     match col with
     | Red -> { color = Red; steps_left = 10 }
-    | Green -> { color = Green; steps_left = 10 }
+    | Green -> { color = Green; steps_left = 8 }
     | Yellow -> { color = Yellow; steps_left = 2 }
 
   let get_color { color } = color
@@ -60,7 +60,7 @@ module TrafficLight : TrafficLightSig = struct
 
   let increment { color; steps_left } =
     match (color, steps_left) with
-    | Red, 0 -> { color = Green; steps_left = 10 }
+    | Red, 0 -> { color = Green; steps_left = 8 }
     | Green, 0 -> { color = Yellow; steps_left = 2 }
     | Yellow, 0 -> { color = Red; steps_left = 10 }
     | _, n -> { color; steps_left = n - 1 }
