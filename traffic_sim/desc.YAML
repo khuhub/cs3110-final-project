@@ -1,0 +1,26 @@
+--- 
+group: 
+  - name: Katherine Hu
+    netid: kyh29
+  - name: Vera Hanjani
+    netid: vsh24
+  - name: Andrew Arena
+    netid: aja298
+
+pm: 
+  name: Maksym Ioffe
+  netid: mi266
+
+publish: true
+
+title: "TS Traffic Simulator"
+
+git-repo: "https://github.com/khuhub/cs3110-final-project"
+
+demo-video-url: "https://www.youtube.com/watch?v=q7Y1HXCx1Xc"
+
+desc: >
+  Our project simulates the flow of traffic through a four way intersection. 
+  Watch cars move through the interesection, and watch lanes get backed up in real time. 
+  If you'd like, you can specify the intersection's initial state and the rate of new cars arriving into each lane.
+  
