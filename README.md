@@ -1,4 +1,4 @@
-# cs3110-final-project
+# TS Traffic Simulator
 
 ## Andrew Arena (aja298)
 ## Vera Hanjani (vsh24)
