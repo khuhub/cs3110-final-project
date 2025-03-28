@@ -24,5 +24,8 @@ let help =
 (** Make sure the sps arg is > 0 !!! *)
 let () =
   TheView.TheView.render
-    (Intersection.create [| []; []; []; [] |] [| 0.5; 0.5; 0.5; 0.5 |])
+    (* (Intersection.create [| []; []; []; [] |] [| 0.5; 0.5; 0.5; 0.5 |]) *)
+    (Intersection.create
+       [| gencars; gencars; gencars; gencars |]
+       [| 0.0; 0.0; 0.0; 0.0 |])
     10
