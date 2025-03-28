@@ -1,4 +1,3 @@
-open Traffic_sim
 
 let () = Random.self_init ()
 
@@ -23,6 +22,10 @@ let help =
    Watch the flow of traffic in a four-way intersection. Cars are spawned with \
    random turning directions and go through the intersection.\n\
   \ \n"
+<<<<<<< HEAD
+(* let () = TheView.TheView.render (Intersection.create [| gencars; gencars;
+   gencars; gencars |]) 5 *)
+=======
 
 (** Make sure the sps arg is > 0 !!! *)
 let () =
@@ -31,3 +34,4 @@ let () =
     (* (Intersection.create [| []; []; gencars; gencars |] [| 0.0; 0.0; 0.0; 0.0
        |]) *)
     5
+>>>>>>> refs/remotes/origin/main
