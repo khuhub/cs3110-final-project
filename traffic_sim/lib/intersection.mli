@@ -4,8 +4,8 @@ type t
 (** [t] is a traffic intersection composed of multiple lanes that tracks the
     pasage of time via step increments. *)
 
-val create : Car.t list list -> t
-(** [create lst] creates an intersection with each list of cars in [lst] being
+val create : Car.t list array -> t
+(** [create arr] creates an intersection with each list of cars in [arr] being
     added to its corresponding lane. *)
 
 val empty : t
@@ -17,10 +17,10 @@ val get_steps : t -> int
 (** [get_steps t] is the number of steps that have elapsed in intersection [t].
 *)
 
-val step : t -> Car.t list list -> t
-(** [step t lst] is the resulting intersection after [t] increments one time
-    step. Each car in each sublist in [lst] is pushed on the corresponding lane.
-    - Raises: [Invalid_argument] if [List.length lst] does not match the number
+val step : Car.t list array -> t -> t
+(** [step t arr] is the resulting intersection after [t] increments one time
+    step. Each car in each sublist in [arr] is pushed on the corresponding lane.
+    - Raises: [Invalid_argument] if [Array.length arr] does not match the number
       of lanes. *)
 
 val random_step : t -> t
