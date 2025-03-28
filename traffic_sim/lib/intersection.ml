@@ -188,4 +188,4 @@ let string_of_intersection i =
        "" i.cars_in_intersection)
     (string_of_int i.steps)
 
-let list_lane_lights t = List.map (fun e -> (e.lane, e.light)) t.lanes
+let list_lane_lights t = Array.map (fun e -> (e.lane, e.light)) t.lanes
