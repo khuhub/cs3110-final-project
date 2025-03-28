@@ -38,7 +38,7 @@ module TheView : TheViewSig = struct
       odd*)
   let create_canvas unit =
     unit_x := unit;
-    let w = 11 * !unit_x in
+    let w = 8 * !unit_x in
     Array.make_matrix (w + 1) (w + 1) ([], " ")
 
   (** rotates a point 90 degrees around the center of the given grid*)
@@ -96,9 +96,15 @@ module TheView : TheViewSig = struct
     let rot_lanes = rot_lanes lanes in
     List.iter (fun e -> set_cell t (fst e) (snd e)) (List.flatten rot_lanes)
 
+  let calcSize () =
+    let w, h = ANSITerminal.size () in
+    let smaller = if w > h then h else w in
+    (smaller / 8) - (smaller / 8 mod 2)
+  (* let add_inter_cars wld = let ne = let se = let sw = let *)
+
   (** [textify wld] is the representation of [wld] in the string matrix.*)
   let textify wld =
-    let canv = create_canvas 8 in
+    let canv = create_canvas 6 in
     let cx, cy = center canv in
     let l1_loc = (cx + !unit_x + 1, cy - (!unit_x / 2)) in
     (* let lane_lights = Intersection.list_of_lane_lights wld in assert
@@ -115,6 +121,8 @@ module TheView : TheViewSig = struct
       done
     done;
     add_lanes canv (Intersection.list_lane_lights wld) l1_loc;
+    (* let cars_inter = Intersection.cars_in_intersection wld in add_inter_cars
+       (Intersection.cars_in_intersection wld); *)
     canv
 
   let assert_RI t = failwith "Not yet implemented"
@@ -134,12 +142,10 @@ module TheView : TheViewSig = struct
   let rec render wld sps =
     Unix.sleepf (1. /. float_of_int sps);
     erase Screen;
-    print_canv (textify wld);
-    print_endline
-      ("Steps: "
-      ^ string_of_int (Intersection.get_steps wld)
-      ^ "\tSteps Per Second: " ^ string_of_int sps);
+    (* print_canv (textify wld); print_endline ("Steps: " ^ string_of_int
+       (Intersection.get_steps wld) ^ "\tSteps Per Second: " ^ string_of_int
+       sps); *)
     let new_wld = Intersection.random_step wld in
-    (* print_string [] (Intersection.string_of_intersection wld); *)
+    print_string [] (Intersection.string_of_intersection wld);
     render new_wld sps
 end
