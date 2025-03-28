@@ -40,16 +40,10 @@ let empty =
   in
   { lanes = lst; cars_in_intersection = []; steps = 0 }
 
-<<<<<<< HEAD
 let add_cars lanes carlstlst =
   List.map2
     (fun { lane } carlst -> List.map (fun car -> Lane.push_car car lane) carlst)
     lanes carlstlst
-=======
-let add_cars lanes carlstlst = ()
-(*List.iter2 (fun { lane } carlst -> List.iter (fun car -> Lane.push_car car
-  lane) carlst) lanes carlstlst*)
->>>>>>> 85f247a (Intersection fix)
 
 let create lst =
   (* let i = empty in add_cars i.lanes lst; *)
