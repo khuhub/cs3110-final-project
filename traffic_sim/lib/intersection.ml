@@ -35,8 +35,8 @@ let empty =
         {
           lane = Lane.empty_lane;
           light =
-            (if i mod 2 = 0 then TrafficLight.create Red
-             else TrafficLight.create Green);
+            (if i mod 2 = 0 then TrafficLight.create Green
+             else TrafficLight.create Red);
         })
   in
 

@@ -1,3 +1,3 @@
 (test
  (name test_traffic_sim)
- (libraries ounit2 traffic_sim))
+ (libraries ounit2 qcheck traffic_sim))

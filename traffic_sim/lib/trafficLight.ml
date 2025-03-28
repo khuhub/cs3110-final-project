@@ -30,6 +30,10 @@ module type TrafficLightSig = sig
   val string_of_traffic_light : t -> string
   (** [string_of_traffic_light t] is the string representation of traffic light
       [t]. *)
+
+  val set_color : t -> color -> t
+  (** [set_color t c] is the resulting traffic light after setting the color of
+      [t] to [c]. *)
 end
 
 module TrafficLight : TrafficLightSig = struct
@@ -67,4 +71,10 @@ module TrafficLight : TrafficLightSig = struct
 
   let string_of_traffic_light t =
     Printf.sprintf "%s%i" (string_of_color t.color) t.steps_left
+
+  let set_color t color =
+    match color with
+    | Red -> { color = Red; steps_left = 10 }
+    | Green -> { color = Green; steps_left = 10 }
+    | Yellow -> { color = Yellow; steps_left = 2 }
 end

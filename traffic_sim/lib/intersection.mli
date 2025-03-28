@@ -1,4 +1,10 @@
 open Car
+open TrafficLight
+
+type lane_light_pair = {
+  lane : Lane.t;
+  light : TrafficLight.t;
+}
 
 type t
 (** [t] is a traffic intersection composed of multiple lanes that tracks the
@@ -40,6 +46,11 @@ val cars_in_intersection : t -> Car.t option array
 val string_of_intersection : t -> string
 (** [string_of t] is the string representation of intersection [t]. *)
 
-val list_lane_lights : t -> (Lane.t * TrafficLight.TrafficLight.t) list
+val list_lane_lights : t -> (Lane.t * TrafficLight.t) list
 (** [list_lane_lights t] is the list of the all pairs of lights and lanes in the
     intersection in a consistent order. *)
+
+val get_lane_pair : t -> int -> lane_light_pair
+(** [get_lane_pair t i] is the lane and light pair at index [i] in intersection
+    [t]. The index corresponds to the physical position of the lane in the
+    intersection. *)
