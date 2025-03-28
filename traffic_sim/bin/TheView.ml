@@ -26,7 +26,8 @@ module TheView : TheViewSig = struct
       bounds, do nothing. *)
   let set_cell (t : t) (a, b) (style, str) =
     let w, h = size t in
-    if a > w || b > h then () else t.(a).(b) <- (style, str)
+    if a >= w - 1 || b >= h - 1 || a < 0 || b < 0 then ()
+    else t.(a).(b) <- (style, str)
 
   (** [unit_x] is the size of a single distance unit in the grid. Should be used
       to keep track of relative sizes. Must be divisible by 2. *)
@@ -142,10 +143,12 @@ module TheView : TheViewSig = struct
   let rec render wld sps =
     Unix.sleepf (1. /. float_of_int sps);
     erase Screen;
-    (* print_canv (textify wld); print_endline ("Steps: " ^ string_of_int
-       (Intersection.get_steps wld) ^ "\tSteps Per Second: " ^ string_of_int
-       sps); *)
+    print_canv (textify wld);
+    print_endline
+      ("Steps: "
+      ^ string_of_int (Intersection.get_steps wld)
+      ^ "\tSteps Per Second: " ^ string_of_int sps);
     let new_wld = Intersection.random_step wld in
-    print_string [] (Intersection.string_of_intersection wld);
+    (* print_string [] (Intersection.string_of_intersection wld); *)
     render new_wld sps
 end
