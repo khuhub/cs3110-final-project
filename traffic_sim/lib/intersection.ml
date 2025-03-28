@@ -162,6 +162,14 @@ let string_of_intersection_car = function
       Printf.sprintf "%s%i%s" (Car.string_of_car car) enter_lane
         (string_of_int steps_left)
 
+let cars_in_intersection i =
+  Array.map
+    (fun car ->
+      match car with
+      | None -> None
+      | Some { car } -> Some car)
+    i.cars_in_intersection
+
 let string_of_intersection i =
   Printf.sprintf
     "N: [ %s ]\n\

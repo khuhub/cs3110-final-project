@@ -27,6 +27,11 @@ val random_step : t -> t
 (** [random_step t] is the resulting intersection after [t] increments one time
     step. Random cars are added to the end of each lane. *)
 
+val cars_in_intersection : t -> Car.t option array
+(** [cars_in_intersection t] is the array of cars in the intersection [t] whose
+    index in the array corresponds to their physical position in the
+    intersection. *)
+
 val string_of_intersection : t -> string
 (** [string_of t] is the string representation of intersection [t]. *)
 
