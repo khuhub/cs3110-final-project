@@ -95,4 +95,4 @@ let string_of_intersection i =
     | [] -> ""
     | h :: t -> "")
 
-let list_lane_lights t = failwith "Not Yet Implemented"
+let list_lane_lights t = List.map (fun e -> (e.lane, e.light)) t.lanes
