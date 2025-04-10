@@ -13,9 +13,6 @@ end
 module TheView : TheViewSig = struct
   type t = (style list * string) array array
 
-  (** RI : the y dimension of t is odd, so centers work out nicely, and the x
-      dimension twice the length of the y dimension.*)
-
   let size t = (Array.length t, Array.length t.(0))
 
   (** [center t] is the center of t. *)

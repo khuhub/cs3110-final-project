@@ -1,5 +1,6 @@
 open Traffic_sim
-open Core.Command
+open Core
+open Command_unix
 
 let () = Random.self_init ()
 
@@ -28,8 +29,6 @@ let help =
    The simulation will display the traffic flow exiting each lane. Check how \
    it compares to the traffic flow entering the lane!\n\
   \   "
-
-open Core
 
 let get_rate = function
   | None -> 0.2
@@ -120,4 +119,4 @@ let command =
      and sps = anon (maybe_with_default 5 ("Steps per second" %: int)) in
      fun () -> run sps useflow usetraffic)
 
-let () = Command_unix.run ~version:"1.0" command
+let () = Command_unix.run command
