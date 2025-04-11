@@ -119,4 +119,6 @@ let command =
      and sps = anon (maybe_with_default 5 ("Steps per second" %: int)) in
      fun () -> run sps useflow usetraffic)
 
-let () = Command_unix.run command
+(* let () = Command_unix.run command *)
+
+let () = Gui.main ()
