@@ -226,5 +226,4 @@ let string_of_intersection i =
     ^ string_of_intersection_car (Array.get i.cars_in_intersection 2))
     (string_of_int i.steps)
 
-let list_lane_lights t =
-  Array.fold_left (fun acc e -> (e.lane, e.light) :: acc) [] t.lanes
+let list_lane_lights t = Array.fold_left (fun acc e -> e :: acc) [] t.lanes
