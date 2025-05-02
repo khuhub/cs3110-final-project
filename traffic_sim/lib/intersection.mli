@@ -28,13 +28,13 @@ val get_steps : t -> int
 (** [get_steps t] is the number of steps that have elapsed in intersection [t].
 *)
 
-val step : Car.t list array -> t -> t
+val step : Car.t list array -> t -> t * Car.t option array
 (** [step t arr] is the resulting intersection after [t] increments one time
     step. Each car in each sublist in [arr] is pushed on the corresponding lane.
     - Raises: [Invalid_argument] if [Array.length arr] does not match the number
       of lanes. *)
 
-val random_step : t -> t
+val random_step : t -> t * Car.t option array
 (** [random_step t] is the resulting intersection after [t] increments one time
     step. Random cars are added to the end of each lane. *)
 

@@ -186,5 +186,5 @@ module TheView : TheViewSig = struct
     (* print_string [] (Intersection.string_of_intersection wld); *)
     Unix.sleepf (1. /. float_of_int sps);
     erase Screen;
-    render new_wld sps
+    render (fst new_wld) sps
 end

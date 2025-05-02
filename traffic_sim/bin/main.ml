@@ -1,5 +1,5 @@
 open Traffic_sim
-open Command_unix
+open Core.Command
 
 let () = Random.self_init ()
 

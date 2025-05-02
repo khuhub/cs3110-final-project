@@ -120,6 +120,7 @@ let increment_light lane =
     after one time step. *)
 let increment_intersection_cars i =
   let new_arr = Array.make 4 None in
+  let popped_cars = Array.make 4 None in
   Array.iteri
     (fun index car ->
       match car with
@@ -128,9 +129,12 @@ let increment_intersection_cars i =
           if c.steps_left > 0 then
             Array.set new_arr
               ((index + 3) mod 4)
-              (Some { c with steps_left = c.steps_left - 1 }))
+              (Some { c with steps_left = c.steps_left - 1 })
+          else popped_cars.(index) <- Some c.car)
+      (*TODO: add function determining which lane to be added onto after
+        popped*)
     i.cars_in_intersection;
-  new_arr
+  (new_arr, popped_cars)
 
 (** [new_lanes i new_cars_in_intersection] is the resulting array of lanes after
     one step. *)
@@ -170,11 +174,12 @@ let step carlst_arr i =
     raise (Invalid_argument "Must have four elements.")
   else
     let new_cars_in_intersection = increment_intersection_cars i in
-    {
-      lanes = increment_lanes i new_cars_in_intersection;
-      cars_in_intersection = new_cars_in_intersection;
-      steps = i.steps + 1;
-    }
+    ( {
+        lanes = increment_lanes i (fst new_cars_in_intersection);
+        cars_in_intersection = fst new_cars_in_intersection;
+        steps = i.steps + 1;
+      },
+      snd new_cars_in_intersection )
 
 let random_step i =
   let carlst_arr =
