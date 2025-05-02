@@ -22,6 +22,8 @@ module type TrafficLightSig = sig
   (** [get_color t] is the current color of traffic light [t]. *)
 
   val can_go : int -> t -> bool
+  (** [can_go i t] returns whether or not a car can go past a traffic light [t]
+      based on how many steps it will take to reach the other side. *)
 
   val increment : t -> t
   (** [increment t] is the resulting traffic light after [t] increments one time
