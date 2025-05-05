@@ -1,2 +1,4 @@
 traffic_sim/_build/
 traffic_sim/_opam/
+traffic_sim/bin/main.ml.save
+.DS_Store
