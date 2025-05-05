@@ -54,3 +54,8 @@ val get_lane_pair : t -> int -> lane_light_pair
 (** [get_lane_pair t i] is the lane and light pair at index [i] in intersection
     [t]. The index corresponds to the physical position of the lane in the
     intersection. *)
+
+val add_one_car : t -> int -> Car.t -> t
+(** [add_one_car i l c] is the intersection [i] with the car [c] added to the
+    lane at index [l]. The index corresponds to the physical position of the
+    lane in the intersection. *)

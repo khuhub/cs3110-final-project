@@ -56,6 +56,12 @@ let add_cars i carlst_arr =
   in
   { i with lanes }
 
+let add_one_car i l car =
+  let lane_pair = i.lanes.(l) in
+  let new_lane = Lane.push_car car lane_pair.lane in
+  i.lanes.(l) <- { lane_pair with lane = new_lane };
+  i
+
 let get_lane_pair i index = Array.get i.lanes index
 
 let set_rate_one rate index i =
@@ -130,7 +136,7 @@ let increment_intersection_cars i =
             Array.set new_arr
               ((index + 3) mod 4)
               (Some { c with steps_left = c.steps_left - 1 })
-          else popped_cars.(index) <- Some c.car)
+          else popped_cars.(index) <- Some c)
       (*TODO: add function determining which lane to be added onto after
         popped*)
     i.cars_in_intersection;
