@@ -180,12 +180,20 @@ let step carlst_arr i =
     raise (Invalid_argument "Must have four elements.")
   else
     let new_cars_in_intersection = increment_intersection_cars i in
+    let new_cars =
+      Array.map
+        (fun x ->
+          match x with
+          | None -> None
+          | Some c -> Some c.car)
+        (fst new_cars_in_intersection)
+    in
     ( {
         lanes = increment_lanes i (fst new_cars_in_intersection);
         cars_in_intersection = fst new_cars_in_intersection;
         steps = i.steps + 1;
       },
-      snd new_cars_in_intersection )
+      new_cars )
 
 let random_step i =
   let carlst_arr =
