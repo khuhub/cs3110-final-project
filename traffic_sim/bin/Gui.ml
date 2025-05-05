@@ -1,4 +1,5 @@
 open Traffic_sim.Intersection
+open Raylib
 
 module IntersectionView = struct
   type t = {
@@ -26,7 +27,24 @@ module IntersectionView = struct
       }
     | Unloaded
 
-  let tex = ref Unloaded
+  let tex : textures ref = ref Unloaded
+
+  (* * rotates a point 90 degrees clockwise around the center of the given grid
+     let rot90 t v = let a, b = Vector2.rotate let cx, cy = (Vector2.x t.center,
+     Vector2.y t.center) in (cx +. (b -. cy), cy -. (a -. cx))
+
+     let rot90_list t lst = List.iter rot90 *)
+
+  (** Calcs the points to draw the car textures at for the east lane, based on
+      the starting point. *)
+  let car_distances start_point =
+    let open Raylib in
+    let step = Vector2.create 0.0 100.0 in
+    List.init 6 (fun i ->
+        let i = float_of_int i in
+        Vector2.add start_point (Vector2.scale step i))
+
+  (* let draw_cars t car_list = let points = car_distances t.center in *)
 
   let init_textures () =
     let open Raylib in
@@ -35,18 +53,18 @@ module IntersectionView = struct
       image_resize (addr img) dimLight dimLight;
       image_rotate (addr img) (90 * rots)
     in
-    let im = ref (load_image "../textures/SingleIntersection.png") in
+    let im = ref (load_image "./textures/SingleIntersection.png") in
     image_resize (addr !im) (get_screen_height ()) (get_screen_width ());
-    let red_east = load_image "../textures/red_right.png" in
-    let yellow_east = load_image "../textures/yellow_right.png" in
-    let green_east = load_image "../textures/green_right.png" in
-    let car = load_image "../textures/car.png" in
+    let red_east = load_image "./textures/red_right.png" in
+    let yellow_east = load_image "./textures/yellow_right.png" in
+    let green_east = load_image "./textures/green_right.png" in
+    let car = load_image "./textures/car.png" in
     tex :=
       Ready
         {
           bg = load_texture_from_image !im;
           red_east =
-            (let img = load_image "../textures/red_right.png" in
+            (let img = red_east in
              transform_light img 0;
              load_texture_from_image img);
           red_south =
@@ -62,7 +80,7 @@ module IntersectionView = struct
              transform_light img 3;
              load_texture_from_image img);
           yellow_east =
-            (let img = load_image "../textures/yellow_right.png" in
+            (let img = yellow_east in
              transform_light img 0;
              load_texture_from_image img);
           yellow_south =
@@ -78,7 +96,7 @@ module IntersectionView = struct
              transform_light img 3;
              load_texture_from_image img);
           green_east =
-            (let img = load_image "../textures/green_right.png" in
+            (let img = green_east in
              transform_light img 0;
              load_texture_from_image img);
           green_south =
@@ -94,7 +112,7 @@ module IntersectionView = struct
              transform_light img 3;
              load_texture_from_image img);
           car =
-            (image_resize (addr car) 100 100;
+            (image_resize (addr car) 60 40;
              load_texture_from_image car);
         }
 
@@ -150,13 +168,40 @@ module IntersectionView = struct
     in
     List.iteri draw_light lights
 
+  let rec get_cars_in_lane lane =
+    let open Traffic_sim in
+    let car = Lane.pop_car lane in
+    match car with
+    | Some (h, t) -> h :: get_cars_in_lane t
+    | None -> []
+
+  let draw_cars_in_lane cars_in_lanes =
+    match !tex with
+    | Ready tex ->
+        let car_draw i lane =
+          List.iteri
+            (fun j cars ->
+              Raylib.(
+                draw_texture tex.car
+                  (100 + (i * 100))
+                  (100 + (j * 100))
+                  Color.white))
+            lane
+        in
+        List.iteri car_draw cars_in_lanes
+    | Unloaded -> failwith "bad"
+
   let draw_cars { intersection } =
     let open Traffic_sim in
     let open Raylib in
     let lanes =
-      List.map (fun a -> a.lane) (Intersection.list_lane_lights intersection)
+      List.map
+        (fun a -> get_cars_in_lane a.lane)
+        (Intersection.list_lane_lights intersection)
     in
-    ()
+    match !tex with
+    | Ready k -> draw_cars_in_lane lanes
+    | Unloaded -> failwith "load them bud"
 
   (** Draw a intersection centered at the given point with the given width and
       height.*)
@@ -168,6 +213,7 @@ module IntersectionView = struct
         draw_texture k.bg 0 0 Color.white;
         (* let str = string_of_intersection t.intersection in *)
         (* draw_text str (cx - rdim) (cy + rdim) 15 Color.raywhite; *)
+        draw_cars t;
         draw_lights t
     | Unloaded -> failwith "load textures."
 end
@@ -203,11 +249,15 @@ module State = struct
       (float_of_int (get_screen_width ()), float_of_int (get_screen_height ()))
     in
     set_target_fps 60;
+    let inter =
+      Traffic_sim.Intersection.empty |> set_rate 0.2 0 |> set_rate 0.2 1
+      |> set_rate 0.2 2 |> set_rate 0.2 3
+    in
     let thing =
       IntersectionView.create
         (Raylib.Vector2.create (w *. 0.5) (h *. 0.5))
         (Raylib.Vector2.create 400.0 400.0)
-        Traffic_sim.Intersection.empty
+        inter
     in
     { mode = SingleView thing; fpstep = 10; steps = 0 }
 
