@@ -98,7 +98,7 @@ let get_traffic_from_cl ask_for_traffic =
   else [| []; []; []; [] |]
 
 (** Make sure the sps arg is > 0 !!! *)
-let run sps ask_for_rates ask_for_traffic =
+let run_single sps ask_for_rates ask_for_traffic =
   try
     if sps < 0 then raise (Invalid_argument "Sps must lowkey be positive.");
     let rates = get_rates_from_cl ask_for_rates in
@@ -110,13 +110,27 @@ let run sps ask_for_rates ask_for_traffic =
       sps
   with Invalid_argument k -> print_endline ("Oops! " ^ k)
 
-let command =
+let run_city sps = failwith "not yet implemented"
+
+let single =
   Command.basic ~summary:"Traffic Simulation - 4-Way Intersection"
     ~readme:(fun () -> help)
     (let%map_open.Command useflow =
        flag "-f" no_arg ~doc:"specify traffic flow in"
      and usetraffic = flag "-t" no_arg ~doc:"specify initial traffic"
      and sps = anon (maybe_with_default 5 ("Steps per second" %: int)) in
-     fun () -> run sps useflow usetraffic)
+     fun () -> run_single sps useflow usetraffic)
+
+let city =
+  Command.basic ~summary:"Traffic Simulation - City Grid"
+    ~readme:(fun () -> help)
+    (let%map_open.Command sps =
+       anon (maybe_with_default 5 ("Steps per second" %: int))
+     in
+     fun () -> run_city sps)
+
+let command =
+  Command.group ~summary:"Simulate Traffic"
+    [ ("Single Intersection", single); ("City Grid", city) ]
 
 let () = Command_unix.run command

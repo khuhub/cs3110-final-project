@@ -1,4 +1,5 @@
 open Traffic_sim
+open Traffic_sim.Intersection
 open Unix
 open ANSITerminal
 
@@ -63,9 +64,9 @@ module TheView : TheViewSig = struct
     | Right -> ([ magenta ], "R")
     | Straight -> ([ blue ], "S")
 
-  let rec textify_queue loc (q : Lane.t * TrafficLight.TrafficLight.t) =
+  let rec textify_queue loc (q : Intersection.lane_light_pair) =
     let light_color =
-      match TrafficLight.TrafficLight.get_color (snd q) with
+      match TrafficLight.TrafficLight.get_color q.light with
       | Green -> ([ green ], "G")
       | Yellow -> ([ yellow ], "Y")
       | Red -> ([ red ], "R")
@@ -75,7 +76,7 @@ module TheView : TheViewSig = struct
       | None -> []
       | Some (c, q) -> c :: get_queue q
     in
-    let carz = get_queue (fst q) in
+    let carz = get_queue q.lane in
     (List.map car_to_string carz |> map_list_loc loc)
     @ [ ((fst loc - !unit_x, snd loc), light_color) ]
 
@@ -158,20 +159,19 @@ module TheView : TheViewSig = struct
     done
 
   let calc_traffic_flow wld =
-    let lls = Intersection.list_lane_lights wld in
+    let lls = list_lane_lights wld in
     List.map
-      (fun e ->
-        if Lane.get_output (fst e) = 0 then 0.0
+      (fun s ->
+        if Lane.get_output s.lane = 0 then 0.0
         else
-          float_of_int (Lane.get_output (fst e))
-          /. float_of_int (Intersection.get_steps wld))
+          float_of_int (Lane.get_output s.lane) /. float_of_int (get_steps wld))
       lls
 
   let rec render wld sps =
     print_canv (textify wld);
     print_endline
       ("Steps: "
-      ^ string_of_int (Intersection.get_steps wld)
+      ^ string_of_int (get_steps wld)
       ^ "\tSteps Per Second: " ^ string_of_int sps);
     List.fold_left2
       (fun acc a b -> acc ^ a ^ string_of_float b)
@@ -179,9 +179,9 @@ module TheView : TheViewSig = struct
       [ "\n  N: "; "\n  E: "; "\n  S: "; "\n  W: " ]
       (List.rev (calc_traffic_flow wld))
     |> print_endline;
-    let new_wld = Intersection.random_step wld in
+    let new_wld = fst (Intersection.random_step wld) in
     (* print_string [] (Intersection.string_of_intersection wld); *)
     Unix.sleepf (1. /. float_of_int sps);
     erase Screen;
-    render (fst new_wld) sps
+    render new_wld sps
 end
