@@ -4,6 +4,7 @@ open Command_unix
 
 let () = Random.self_init ()
 
+(** just for testing?*)
 let gencars =
   [
     Car.Car.random_car ();
@@ -103,14 +104,14 @@ let run_single sps ask_for_rates ask_for_traffic =
     if sps < 0 then raise (Invalid_argument "Sps must lowkey be positive.");
     let rates = get_rates_from_cl ask_for_rates in
     let cars = get_traffic_from_cl ask_for_traffic in
-    TheView.TheView.render
+    SingleView.SingleView.render
       (Intersection.create cars rates)
       (* (Intersection.create [| []; []; gencars; gencars |] [| 0.0; 0.0; 0.0;
          0.0 |]) *)
       sps
   with Invalid_argument k -> print_endline ("Oops! " ^ k)
 
-let run_city sps = failwith "not yet implemented"
+let run_city rows cols rate sps = failwith "not yet implemented"
 
 let single =
   Command.basic ~summary:"Traffic Simulation - 4-Way Intersection"
@@ -124,10 +125,11 @@ let single =
 let city =
   Command.basic ~summary:"Traffic Simulation - City Grid"
     ~readme:(fun () -> help)
-    (let%map_open.Command sps =
-       anon (maybe_with_default 5 ("Steps per second" %: int))
-     in
-     fun () -> run_city sps)
+    (let%map_open.Command rows = anon ("Rows" %: int)
+     and cols = anon ("Columns" %: int)
+     and rate = anon ("Rate (average cars/step)" %: float)
+     and sps = anon (maybe_with_default 5 ("Steps per second" %: int)) in
+     fun () -> run_city rows cols rate sps)
 
 let command =
   Command.group ~summary:"Simulate Traffic"
