@@ -5,134 +5,166 @@ open ANSITerminal
 
 let () = Random.self_init ()
 
-module type SingleViewSig = sig
-  type t
+include View
 
-  val render : Intersection.t -> int -> unit
-end
+(** Maps a list of elements to a list of index-element tuples, putting the head
+    at (a + 1,b) and the rest at (a, b), ..., (a + length - 1, b). *)
+let map_list_loc ((a, b) : int * int) q =
+  List.mapi (fun index e -> ((a + index, b), e)) q
 
-module SingleView : SingleViewSig = struct
-  include View
+let car_to_string car =
+  match Car.Car.get_turn car with
+  | Left -> ([ cyan ], "L")
+  | Right -> ([ magenta ], "R")
+  | Straight -> ([ blue ], "S")
 
-  (** Maps a list of elements to a list of index-element tuples, putting the
-      head at (a + 1,b) and the rest at (a, b), ..., (a + length - 1, b). *)
-  let map_list_loc ((a, b) : int * int) q =
-    List.mapi (fun index e -> ((a + index, b), e)) q
+(** NOTE: W S E N order*)
+let calc_traffic_flow wld =
+  let lls = list_lane_lights wld in
+  let arr = [| 0.0; 0.0; 0.0; 0.0 |] in
+  List.iteri
+    (fun i s ->
+      arr.(i) <-
+        float_of_int (Lane.get_output s.lane)
+        /. (float_of_int (get_steps wld) +. 1.0))
+    lls;
+  arr
 
-  let car_to_string car =
-    match Car.Car.get_turn car with
-    | Left -> ([ cyan ], "L")
-    | Right -> ([ magenta ], "R")
-    | Straight -> ([ blue ], "S")
+let rec textify_queue loc (q : Intersection.lane_light_pair) =
+  let light_color =
+    match TrafficLight.TrafficLight.get_color q.light with
+    | Green -> ([ green ], "G")
+    | Yellow -> ([ yellow ], "Y")
+    | Red -> ([ red ], "R")
+  in
+  let rec get_queue queue =
+    match Lane.pop_car queue with
+    | None -> []
+    | Some (c, q) -> c :: get_queue q
+  in
+  let carz = get_queue q.lane in
+  (List.map car_to_string carz |> map_list_loc loc)
+  @ [ ((fst loc - (!unit_x / 8), snd loc), light_color) ]
 
-  let rec textify_queue loc (q : Intersection.lane_light_pair) =
-    let light_color =
-      match TrafficLight.TrafficLight.get_color q.light with
-      | Green -> ([ green ], "G")
-      | Yellow -> ([ yellow ], "Y")
-      | Red -> ([ red ], "R")
-    in
-    let rec get_queue queue =
-      match Lane.pop_car queue with
-      | None -> []
-      | Some (c, q) -> c :: get_queue q
-    in
-    let carz = get_queue q.lane in
-    (List.map car_to_string carz |> map_list_loc loc)
-    @ [ ((fst loc - !unit_x, snd loc), light_color) ]
+let rec add_lanes t lane_light_list loc =
+  let lanes = List.map (textify_queue loc) lane_light_list in
+  let rec rot_lanes lanes =
+    match lanes with
+    | [] -> []
+    | h :: k ->
+        h
+        :: rot_lanes
+             (List.map
+                (fun e ->
+                  List.map (fun elem -> (rot90 t (fst elem), snd elem)) e)
+                k)
+  in
+  let rot_lanes = List.flatten (rot_lanes lanes) in
+  let rot_rot_rot_lanes =
+    List.map (fun e -> (fst e |> rot90 t |> rot90 t, snd e)) rot_lanes
+  in
+  List.iter (fun e -> set_cell t (fst e) (snd e)) rot_rot_rot_lanes
 
-  let rec add_lanes t lane_light_list loc =
-    let lanes = List.map (textify_queue loc) lane_light_list in
-    let rec rot_lanes lanes =
-      match lanes with
-      | [] -> []
-      | h :: k ->
-          h
-          :: rot_lanes
-               (List.map
-                  (fun e ->
-                    List.map (fun elem -> (rot90 t (fst elem), snd elem)) e)
-                  k)
-    in
-    let rot_lanes = List.flatten (rot_lanes lanes) in
-    let rot_rot_rot_lanes =
-      List.map (fun e -> (fst e |> rot90 t |> rot90 t, snd e)) rot_lanes
-    in
-    List.iter (fun e -> set_cell t (fst e) (snd e)) rot_rot_rot_lanes
+let calcSize () =
+  let w, h = ANSITerminal.size () in
+  let smaller = if w > h then h else w in
+  (smaller / 8) - (smaller / 8 mod 2)
 
-  let calcSize () =
-    let w, h = ANSITerminal.size () in
-    let smaller = if w > h then h else w in
-    (smaller / 8) - (smaller / 8 mod 2)
+let add_inter_cars canv wld =
+  let cx, cy = center canv in
+  let half = !unit_x / 16 in
+  let ne_nw_sw_se =
+    [|
+      (cx - half, cy - half);
+      (cx + half, cy - half);
+      (cx + half, cy + half);
+      (cx - half, cy + half);
+    |]
+  in
+  let carz = Intersection.cars_in_intersection wld in
+  Array.iter2
+    (fun e1 e2 ->
+      match e2 with
+      | None -> ()
+      | Some k -> set_cell canv e1 (car_to_string k))
+    ne_nw_sw_se carz
 
-  let add_inter_cars canv wld =
-    let cx, cy = center canv in
-    let half = !unit_x / 2 in
-    let ne_nw_sw_se =
-      [|
-        (cx - half, cy - half);
-        (cx + half, cy - half);
-        (cx + half, cy + half);
-        (cx - half, cy + half);
-      |]
-    in
-    let carz = Intersection.cars_in_intersection wld in
-    Array.iter2
-      (fun e1 e2 ->
-        match e2 with
-        | None -> ()
-        | Some k -> set_cell canv e1 (car_to_string k))
-      ne_nw_sw_se carz
+let flow_color_code flow =
+  if flow = 0.0 then on_black
+  else if flow < 0.0 then on_blue
+  else if flow < 0.1 then on_cyan
+  else if flow < 0.2 then on_green
+  else if flow < 0.3 then on_magenta
+  else if flow < 0.4 then on_yellow
+  else on_red
 
-  (** [textify wld] is the representation of [wld] in the string matrix.*)
-  let textify wld =
-    let canv = create_canvas 6 in
-    let cx, cy = center canv in
-    let l1_loc = (cx + !unit_x + 1, cy - (!unit_x / 2)) in
-    (* let lane_lights = Intersection.list_of_lane_lights wld in assert
-       (List.length lane_lights = 4); *)
-    set_cell canv (cx, cy) ([], "+");
-    let lb, ub = (cx - !unit_x, cx + !unit_x) in
-    for x = 0 to cx do
-      for y = 0 to cy do
-        if (x > lb && x < ub) && y > lb && y < ub then ()
-        else (
-          if x = lb || x = ub || y = lb || y = ub then
-            sym_set_cell canv (x, y) ([], "*");
-          if x = cx || y = cy then sym_set_cell canv (x, y) ([], "*"))
-      done
-    done;
-    add_lanes canv (Intersection.list_lane_lights wld) l1_loc;
-    add_inter_cars canv wld;
-    canv
+let textify_far wld u w h =
+  let canv = create_canvas u w h in
+  let center = vec_add (center canv) (-1, -1) in
+  let flow = calc_traffic_flow wld in
+  set_cell canv (vec_add center (-1, -1)) ([], "x");
+  set_cell canv (vec_add center (-1, 0)) ([], "x");
+  set_cell canv (vec_add center (0, 0)) ([], "x");
+  set_cell canv (vec_add center (0, -1)) ([], "x");
+  for x = 1 to (u / w / 2) - 2 do
+    set_cell canv (vec_add center (0, x)) ([ flow_color_code flow.(1) ], "|");
+    set_cell canv
+      (vec_add center (-1, (-1 * x) - 1))
+      ([ flow_color_code flow.(0) ], "|");
+    set_cell canv (vec_add center (x, -1)) ([ flow_color_code flow.(2) ], "-");
+    set_cell canv
+      (vec_add center ((-1 * x) - 1, 0))
+      ([ flow_color_code flow.(3) ], "-")
+  done;
 
-  let assert_RI t = failwith "Not yet implemented"
+  canv
 
-  let calc_traffic_flow wld =
-    let lls = list_lane_lights wld in
-    List.map
-      (fun s ->
-        if Lane.get_output s.lane = 0 then 0.0
-        else
-          float_of_int (Lane.get_output s.lane) /. float_of_int (get_steps wld))
-      lls
+(** [textify wld] is the representation of [wld] in the string matrix, with unit
+    [u], width [w], and height [h] (in units).*)
+let textify wld u w h =
+  let canv = create_canvas u w h in
+  let cx, cy = center canv in
+  let l1_loc = (cx + (!unit_x / 8) + 1, cy - (!unit_x / 16)) in
+  (* let lane_lights = Intersection.list_of_lane_lights wld in assert
+     (List.length lane_lights = 4); *)
+  set_cell canv (cx, cy) ([], "+");
+  let lb, ub = (cx - (!unit_x / 8), cx + (!unit_x / 8)) in
+  for x = 0 to cx do
+    for y = 0 to cy do
+      if (x > lb && x < ub) && y > lb && y < ub then ()
+      else (
+        if x = lb || x = ub || y = lb || y = ub then
+          sym_set_cell canv (x, y) ([], "*");
+        if x = cx || y = cy then sym_set_cell canv (x, y) ([], "*"))
+    done
+  done;
+  add_lanes canv (Intersection.list_lane_lights wld) l1_loc;
+  add_inter_cars canv wld;
+  canv
 
-  let rec render wld sps =
-    print_canv (textify wld);
-    print_endline
-      ("Steps: "
-      ^ string_of_int (get_steps wld)
-      ^ "\tSteps Per Second: " ^ string_of_int sps);
-    List.fold_left2
-      (fun acc a b -> acc ^ a ^ string_of_float b)
-      "Traffic Flow (cars exited / step)"
-      [ "\n  N: "; "\n  E: "; "\n  S: "; "\n  W: " ]
-      (List.rev (calc_traffic_flow wld))
-    |> print_endline;
-    let new_wld = fst (Intersection.random_step wld) in
-    (* print_string [] (Intersection.string_of_intersection wld); *)
-    Unix.sleepf (1. /. float_of_int sps);
-    erase Screen;
-    set_cursor 0 0;
-    render new_wld sps
-end
+let assert_RI t = failwith "Not yet implemented"
+
+(** Note to self: to share code with CityView, the thing that unit_x is set to
+    (48) is kind of like 8 times the value we actually want. So I've gone ahead
+    and divided all those values by 8 in the above code.*)
+let rec render wld sps =
+  print_canv (textify wld 48 1 1);
+  print_endline
+    ("Steps: "
+    ^ string_of_int (get_steps wld)
+    ^ "\tSteps Per Second: " ^ string_of_int sps);
+  (let flow = calc_traffic_flow wld in
+   Printf.printf
+     "Traffic Flow (cars exited / step) \n\
+     \  N: %f\n\
+     \  E: %f\n\
+     \  S: %f\n\
+     \  W: %f\n\
+      %!"
+     flow.(3) flow.(2) flow.(1) flow.(0));
+  let new_wld = fst (Intersection.random_step wld) in
+  (* print_string [] (Intersection.string_of_intersection wld); *)
+  Unix.sleepf (1. /. float_of_int sps);
+  erase Screen;
+  set_cursor 0 0;
+  render new_wld sps

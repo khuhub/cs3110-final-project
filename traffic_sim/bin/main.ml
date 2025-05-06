@@ -66,13 +66,13 @@ let parse_traffic_string str =
 let get_rates_from_cl ask_for_rates =
   if ask_for_rates then (
     let arr = [| 0.0; 0.0; 0.0; 0.0 |] in
-    print_endline "Enter North Rate:";
-    arr.(0) <- get_rate (read_float_opt ());
-    print_endline "Enter East Rate:";
-    arr.(1) <- get_rate (read_float_opt ());
-    print_endline "Enter South Rate:";
-    arr.(2) <- get_rate (read_float_opt ());
     print_endline "Enter West Rate:";
+    arr.(0) <- get_rate (read_float_opt ());
+    print_endline "Enter South Rate:";
+    arr.(1) <- get_rate (read_float_opt ());
+    print_endline "Enter East Rate:";
+    arr.(2) <- get_rate (read_float_opt ());
+    print_endline "Enter North Rate:";
     arr.(3) <- get_rate (read_float_opt ());
     arr)
   else [| 0.2; 0.2; 0.2; 0.2 |]
@@ -104,14 +104,15 @@ let run_single sps ask_for_rates ask_for_traffic =
     if sps < 0 then raise (Invalid_argument "Sps must lowkey be positive.");
     let rates = get_rates_from_cl ask_for_rates in
     let cars = get_traffic_from_cl ask_for_traffic in
-    SingleView.SingleView.render
+    SingleView.render
       (Intersection.create cars rates)
       (* (Intersection.create [| []; []; gencars; gencars |] [| 0.0; 0.0; 0.0;
          0.0 |]) *)
       sps
   with Invalid_argument k -> print_endline ("Oops! " ^ k)
 
-let run_city rows cols rate sps = failwith "not yet implemented"
+let run_city rows cols rate sps =
+  CityView.render (City.create rows cols rate) sps
 
 let single =
   Command.basic ~summary:"Traffic Simulation - 4-Way Intersection"
@@ -128,7 +129,7 @@ let city =
     (let%map_open.Command rows = anon ("Rows" %: int)
      and cols = anon ("Columns" %: int)
      and rate = anon ("Rate (average cars/step)" %: float)
-     and sps = anon (maybe_with_default 5 ("Steps per second" %: int)) in
+     and sps = anon (maybe_with_default 1 ("Steps per second" %: int)) in
      fun () -> run_city rows cols rate sps)
 
 let command =

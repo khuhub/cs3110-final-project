@@ -147,3 +147,8 @@ let step c =
     new_cars;
 
   { c with intersections = new_intersections; steps = c.steps + 1 }
+
+let get_intersections t = List.map Array.to_list (Array.to_list t.intersections)
+
+let get_dimensions t =
+  (Array.length t.intersections, Array.length t.intersections.(0))
