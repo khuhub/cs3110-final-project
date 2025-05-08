@@ -35,7 +35,7 @@ let view_of_city city mode =
   let w, h = City.get_dimensions city in
   let canv =
     match mode with
-    | Far -> create_canvas 6 (w / 2) (h / 2)
+    | Far -> create_canvas 8 (w / 2) (h / 2)
     | Mid -> create_canvas 21 w h
     | Single -> create_canvas 48 w h
   in
@@ -49,7 +49,7 @@ let view_of_city city mode =
   canv
 
 let rec render city sps =
-  print_canv (view_of_city city Far);
+  print_canv (view_of_city city Mid);
   Unix.sleepf (1. /. float_of_int sps);
   erase Screen;
   set_cursor 0 0;
