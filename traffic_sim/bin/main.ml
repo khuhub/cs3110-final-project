@@ -1,1 +1,1 @@
-let () = Gui.main ()
+let _ = Gui.main ()

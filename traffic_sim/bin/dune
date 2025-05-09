@@ -1,13 +1,4 @@
 (executable
  (public_name traffic_sim)
  (name main)
- (libraries
-  traffic_sim
-  unix
-  ANSITerminal
-  core
-  core_unix.command_unix
-  raylib
-  raygui)
- (preprocess
-  (pps ppx_jane)))
+ (libraries traffic_sim ANSITerminal lablgtk3))
