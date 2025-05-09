@@ -381,6 +381,50 @@ let lane_tests =
 
 let () = run_test_tt_main lane_tests
 
+(**Traffic Light tests*)
+
+(**Test: create lights with every color*)
+let test_create_colors _ =
+  let red = TrafficLight.create Red in
+  let green = TrafficLight.create Green in
+  let yellow = TrafficLight.create Yellow in
+  assert_equal Red (TrafficLight.get_color red);
+  assert_equal Green (TrafficLight.get_color green);
+  assert_equal Yellow (TrafficLight.get_color yellow)
+
+(**Test: if a car can go depending on the steps left of light*)
+let test_can_go _ =
+  let green_pass = TrafficLight.create Green in
+  let yellow_pass = TrafficLight.create Yellow in
+  let red_block = TrafficLight.create Red in
+  let yellow_block = TrafficLight.create Yellow |> TrafficLight.increment in
+  assert_equal true (TrafficLight.can_go 0 green_pass);
+  assert_equal true (TrafficLight.can_go 1 yellow_pass);
+  assert_equal false (TrafficLight.can_go 0 red_block);
+  assert_equal false (TrafficLight.can_go 2 yellow_block)
+
+(**Test : incrementing light colors correctly*)
+let test_increment_color _ =
+  let rec increment n light =
+    if n = 0 then light else increment (n - 1) (TrafficLight.increment light)
+  in
+  let red = increment 10 (TrafficLight.create Red) in
+  let green = increment 8 (TrafficLight.create Green) in
+  let yellow = increment 2 (TrafficLight.create Yellow) in
+  assert_equal Green (TrafficLight.get_color (TrafficLight.increment red));
+  assert_equal Yellow (TrafficLight.get_color (TrafficLight.increment green));
+  assert_equal Red (TrafficLight.get_color (TrafficLight.increment yellow))
+
+let traffic_light_test =
+  "Traffic Light tests"
+  >::: [
+         "Create colors" >:: test_create_colors;
+         "Can go" >:: test_can_go;
+         "Increment color" >:: test_increment_color;
+       ]
+
+let () = run_test_tt_main traffic_light_test
+
 (* Intersection tests *)
 
 let print_intersection i_cars =
@@ -481,20 +525,41 @@ let () = run_test_tt_main intersection_tests
 
 (* City tests *)
 
+(**Test: creates city with accurate dimensions*)
 let city_dimension_test r c =
   "Test city dimensions" >:: fun _ ->
   assert_equal (r, c)
     City.(create r c 0.5 |> get_dimensions)
     ~printer:(fun (i, j) -> Printf.sprintf "%i, %i" i j)
 
+(**Test: creates city with correct rates*)
 let city_rate_test city r c rates =
   Printf.sprintf "Test city rate for (%i, %i)" r c >:: fun _ ->
   assert_equal rates (City.get_rate r c city)
     ~printer:(string_of_array string_of_float)
 
+(**Test: creates city with correct number of steps*)
 let city_step_number_test city steps =
   Printf.sprintf "Test city has %i ste[s]" steps >:: fun _ ->
   assert_equal steps (City.get_steps city) ~printer:string_of_int
+
+(**Test: city dimensions preserved after step*)
+let city_step_dimension_test city r c =
+  Printf.sprintf "Test city dimensions after step" >:: fun _ ->
+  assert_equal (r, c)
+    City.(step city |> get_dimensions)
+    ~printer:(fun (i, j) -> Printf.sprintf "%i, %i" i j)
+
+(**Test: city step increases after each increment*)
+let city_step_increments city steps =
+  Printf.sprintf "Step %d times increments correctly" steps >:: fun _ ->
+  let rec step_n c steps =
+    if steps = 0 then c else step_n (City.step c) (steps - 1)
+  in
+  let c2 = step_n city steps in
+  assert_equal
+    (steps + City.get_steps city)
+    (City.get_steps c2) ~printer:string_of_int
 
 let test_city1 = City.create 1 1 0.5
 let test_city2 = City.create 2 2 0.5
@@ -515,6 +580,10 @@ let city_tests =
          city_step_number_test test_city1 0;
          city_step_number_test City.(step test_city1) 1;
          city_step_number_test City.(step test_city1 |> step) 2;
+         city_step_dimension_test test_city1 1 1;
+         city_step_dimension_test test_city2 2 2;
+         city_step_increments test_city1 10;
+         city_step_increments test_city3 10;
        ]
 
 let () = run_test_tt_main city_tests
