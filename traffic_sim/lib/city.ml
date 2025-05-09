@@ -16,29 +16,31 @@ type t = {
 let set_rate rate row col c =
   let max_r = Array.length c.intersections - 1 in
   let max_c = Array.length c.intersections.(0) - 1 in
-  let intersection = c.intersections.(row).(col) in
-  let updated_intersection =
-    match (row, col) with
-    | 0, 0 ->
-        Intersection.set_rate rate 0 intersection
-        |> Intersection.set_rate rate 3
-    | 0, j when j <> max_c -> Intersection.set_rate rate 0 intersection
-    | i, 0 when i <> max_r -> Intersection.set_rate rate 3 intersection
-    | 0, j when j = max_c ->
-        Intersection.set_rate rate 0 intersection
-        |> Intersection.set_rate rate 1
-    | i, 0 when i = max_r ->
-        Intersection.set_rate rate 2 intersection
-        |> Intersection.set_rate rate 3
-    | i, j when i = max_r && j = max_c ->
-        Intersection.set_rate rate 1 intersection
-        |> Intersection.set_rate rate 2
-    | i, j when i = max_r -> Intersection.set_rate rate 2 intersection
-    | i, j when j = max_c -> Intersection.set_rate rate 1 intersection
-    | _ -> failwith "Invalid intersection coordinates"
-  in
-  c.intersections.(row).(col) <- updated_intersection;
+  let i = ref c.intersections.(row).(col) in
+
+  if row = 0 then i := Intersection.set_rate rate 0 !i;
+  if row = max_r then i := Intersection.set_rate rate 2 !i;
+  if col = 0 then i := Intersection.set_rate rate 3 !i;
+  if col = max_c then i := Intersection.set_rate rate 1 !i;
+  c.intersections.(row).(col) <- !i;
   c
+
+(*** let updated_intersection = match (row, col) with | 0, 0 ->
+  Intersection.set_rate rate 0 intersection |> Intersection.set_rate rate 3 | 0,
+  j when j <> max_c -> Intersection.set_rate rate 0 intersection | i, 0 when i
+  <> max_r -> Intersection.set_rate rate 3 intersection | 0, j when j = max_c ->
+  Intersection.set_rate rate 0 intersection |> Intersection.set_rate rate 1 | i,
+  0 when i = max_r -> Intersection.set_rate rate 2 intersection |>
+  Intersection.set_rate rate 3 | i, j when i = max_r && j = max_c ->
+  Intersection.set_rate rate 1 intersection |> Intersection.set_rate rate 2 | i,
+  j when i = max_r -> Intersection.set_rate rate 2 intersection | i, j when j =
+  max_c -> Intersection.set_rate rate 1 intersection | _ -> failwith "Invalid
+  intersection coordinates" in c.intersections.(row).(col) <-
+  updated_intersection; c**)
+
+let get_rate row col c =
+  let intersection = c.intersections.(row).(col) in
+  Array.init 4 (fun i -> Intersection.get_rate i intersection)
 
 (* let set_rate rate row col c = let max_r = Array.length c.intersections - 1 in
    let max_c = Array.length c.intersections.(0) - 1 in
@@ -60,31 +62,30 @@ let set_rate rate row col c =
    <- Intersection.set_rate rate 1 c.intersections.(i).(j); c | _ -> failwith
    "Invalid intersection coordinates" *)
 
+(** set_rate rate 0 0 c |> set_rate rate 0 (Array.length c.intersections.(0) -
+    1) |> set_rate rate (Array.length c.intersections - 1) 0 |> set_rate rate
+    (Array.length c.intersections - 1) (Array.length c.intersections.(0) - 1)**)
 let create rows cols rate =
   let c =
     {
-      intersections = Array.make_matrix rows cols Intersection.empty;
+      intersections =
+        Array.init_matrix rows cols (fun _ _ -> Intersection.empty ());
       steps = 0;
       cars = 0;
     }
   in
-  set_rate rate 0 0 c
-  |> set_rate rate 0 (Array.length c.intersections - 1)
-  |> set_rate rate (Array.length c.intersections.(0) - 1) 0
-  |> set_rate rate
-       (Array.length c.intersections.(0) - 1)
-       (Array.length c.intersections - 1)
+  let corners =
+    [
+      (0, 0);
+      (0, Array.length c.intersections.(0) - 1);
+      (Array.length c.intersections - 1, 0);
+      (Array.length c.intersections - 1, Array.length c.intersections.(0) - 1);
+    ]
+  in
+  List.fold_left (fun acc (r, c) -> set_rate rate r c acc) c corners
 
 let get_steps c = c.steps
 let num_cars c = c.cars
-
-let string_of_city c =
-  Array.fold_left
-    (fun str row ->
-      Array.fold_left
-        (fun s i -> s ^ Intersection.string_of_intersection i)
-        str row)
-    "" c.intersections
 
 (** [step_intersections i cararr] returns an intersection that has been stepped
     and adds all of the cars that were popped off to [cararr] *)

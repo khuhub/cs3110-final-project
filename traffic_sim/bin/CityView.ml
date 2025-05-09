@@ -49,7 +49,7 @@ let view_of_city city mode =
   canv
 
 let rec render city sps =
-  print_canv (view_of_city city Mid);
+  print_canv (view_of_city city Far);
   Unix.sleepf (1. /. float_of_int sps);
   erase Screen;
   set_cursor 0 0;

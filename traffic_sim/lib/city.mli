@@ -5,6 +5,10 @@ val set_rate : float -> int -> int -> t -> t
 (** [set_rate f i j t] is a city with the rate of the intersection at index
     [i][j] in intersection [t] set to [f]. *)
 
+val get_rate : int -> int -> t -> float array
+(** [get_rate i j t] is the array of rates for each lane of the intersection at
+    index [i][j]. *)
+
 val create : int -> int -> float -> t
 (** [create rows cols rate] creates a city with the given number of row and
     columns, and the given rate on the four corners of the intersection.*)
@@ -26,5 +30,3 @@ val get_dimensions : t -> int * int
 
 val num_cars : t -> int
 (** [num_cars t] is the number of cars in city [t]. *)
-
-val string_of_city : t -> string

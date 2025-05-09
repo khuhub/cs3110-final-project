@@ -14,12 +14,15 @@ val set_rate : float -> int -> t -> t
 (** [set_rate f i t] is a intersection with the the rate of the lane at index
     [i] in intersection [t] set to [f]. *)
 
+val get_rate : int -> t -> float
+(** [get_rate i f] is the rate of the lane at index [f]. *)
+
 val create : Car.t list array -> float array -> t
 (** [create c r] creates an intersection where each of its lanes have its rate
     set to the corresponding float in [r] and start off with each car in each
     sublist in [c] being pushed to its corresponding lane. *)
 
-val empty : t
+val empty : unit -> t
 (** [empty] is the intial state of the world. All lanes are empty, and traffic
     lights in the north and south directions are green and those in the east and
     west directions are red. *)
@@ -43,9 +46,6 @@ val cars_in_intersection : t -> Car.t option array
     index in the array corresponds to their physical position in the
     intersection. *)
 
-val string_of_intersection : t -> string
-(** [string_of t] is the string representation of intersection [t]. *)
-
 val list_lane_lights : t -> lane_light_pair list
 (** [list_lane_lights t] is the list of the all pairs of lights and lanes in the
     intersection in a consistent order. *)
@@ -59,3 +59,5 @@ val add_one_car : t -> int -> Car.t -> t
 (** [add_one_car i l c] is the intersection [i] with the car [c] added to the
     lane at index [l]. The index corresponds to the physical position of the
     lane in the intersection. *)
+
+val get_num_cars : t -> int

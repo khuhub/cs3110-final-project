@@ -18,6 +18,7 @@ type t = {
   lanes : lane_light_pair array;
   cars_in_intersection : intersection_car option array;
   steps : int;
+  num_cars : int;
 }
 (** AF: A value [i] of type [t] represents an intersection
     - [i.lanes] is an array of the lane-light pairs that make up the
@@ -29,7 +30,7 @@ type t = {
 
     RI: [steps >= 0] and [List.length lanes = 4]*)
 
-let empty =
+let empty () =
   let lanes =
     Array.init 4 (fun i ->
         {
@@ -40,7 +41,12 @@ let empty =
         })
   in
 
-  { lanes; cars_in_intersection = Array.init 4 (fun _ -> None); steps = 0 }
+  {
+    lanes;
+    cars_in_intersection = Array.init 4 (fun _ -> None);
+    steps = 0;
+    num_cars = 0;
+  }
 
 (** [add_cars lanes carlst_arr] pushes the cars in each sublist in [carlst_arr]
     to its corresponding lane. *)
@@ -60,7 +66,7 @@ let add_one_car i l car =
   let lane_pair = i.lanes.(l) in
   let new_lane = Lane.push_car car lane_pair.lane in
   i.lanes.(l) <- { lane_pair with lane = new_lane };
-  i
+  { i with num_cars = i.num_cars + 1 }
 
 let get_lane_pair i index = Array.get i.lanes index
 
@@ -77,8 +83,10 @@ let set_rate_whole rate_arr i =
   let lane_arr = Array.mapi (fun index r -> set_rate_one r index i) rate_arr in
   { i with lanes = lane_arr }
 
+let get_rate index i = Lane.get_rate i.lanes.(index).lane
+
 let create carlst_arr rate_arr =
-  add_cars empty carlst_arr |> set_rate_whole rate_arr
+  add_cars (empty ()) carlst_arr |> set_rate_whole rate_arr
 
 let get_steps { steps } = steps
 
@@ -99,7 +107,8 @@ let can_enter_intersection c index oncoming_lane cars_in_intersection =
         (fun i_car ->
           match i_car with
           | None -> true
-          | Some { car } -> Car.get_turn car <> Left)
+          | Some { car; enter_lane } ->
+              Car.get_turn car <> Left ) (** TODO: add ability to enter if left car is from same lane*)
         cars_in_intersection
   | Left ->
       (match Lane.peek_car oncoming_lane.lane with
@@ -179,19 +188,23 @@ let step carlst_arr i =
   if Array.length carlst_arr <> 4 then
     raise (Invalid_argument "Must have four elements.")
   else
+    let added_car_amount = ref 0 in
     let new_cars_in_intersection = increment_intersection_cars i in
     let new_cars =
       Array.map
         (fun x ->
           match x with
           | None -> None
-          | Some c -> Some c.car)
+          | Some c ->
+              added_car_amount := !added_car_amount + 1;
+              Some c.car)
         (fst new_cars_in_intersection)
     in
     ( {
         lanes = increment_lanes i (fst new_cars_in_intersection);
         cars_in_intersection = fst new_cars_in_intersection;
         steps = i.steps + 1;
+        num_cars = i.num_cars + !added_car_amount;
       },
       new_cars )
 
@@ -209,40 +222,5 @@ let cars_in_intersection i =
       | Some { car } -> Some car)
     i.cars_in_intersection
 
-let string_of_lane { lane; light } =
-  Printf.sprintf "Light: %s;  Head: %s"
-    (TrafficLight.string_of_traffic_light light)
-    (match Lane.peek_car lane with
-    | None -> "none"
-    | Some c -> Car.string_of_car c)
-
-let string_of_intersection_car = function
-  | None -> "   "
-  | Some { car; steps_left; enter_lane } ->
-      Printf.sprintf "%s%i%s" (Car.string_of_car car) enter_lane
-        (string_of_int steps_left)
-
-let string_of_intersection i =
-  Printf.sprintf
-    "_______________________________\n\
-     N: [ %s ]\n\
-     E: [ %s ]\n\
-     S: [ %s ]\n\
-     W: [ %s ]\n\n\n\
-     %s \n\n\
-     Steps: %s\n\
-     _______________________________"
-    (string_of_lane (get_lane_pair i 0))
-    (string_of_lane (get_lane_pair i 1))
-    (string_of_lane (get_lane_pair i 2))
-    (string_of_lane (get_lane_pair i 3))
-    (string_of_intersection_car (Array.get i.cars_in_intersection 0)
-    ^ "  |  "
-    ^ string_of_intersection_car (Array.get i.cars_in_intersection 1)
-    ^ "\n"
-    ^ string_of_intersection_car (Array.get i.cars_in_intersection 3)
-    ^ "  |  "
-    ^ string_of_intersection_car (Array.get i.cars_in_intersection 2))
-    (string_of_int i.steps)
-
 let list_lane_lights t = Array.to_list t.lanes
+let get_num_cars i = i.num_cars
