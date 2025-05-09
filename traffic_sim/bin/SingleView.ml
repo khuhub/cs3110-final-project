@@ -30,6 +30,8 @@ let calc_traffic_flow wld =
     lls;
   arr
 
+(** Turns the given lane into text, with the head of the lane at the given
+    location. This text represents an east (opening to the west) lane.*)
 let rec textify_queue loc (q : Intersection.lane_light_pair) =
   let light_color =
     match TrafficLight.TrafficLight.get_color q.light with
@@ -48,22 +50,18 @@ let rec textify_queue loc (q : Intersection.lane_light_pair) =
 
 let rec add_lanes t lane_light_list loc =
   let lanes = List.map (textify_queue loc) lane_light_list in
+  let rot90_lane lane =
+    List.map (fun elem -> (rot90 t (fst elem), snd elem)) lane
+  in
   let rec rot_lanes lanes =
     match lanes with
     | [] -> []
     | h :: k ->
-        h
-        :: rot_lanes
-             (List.map
-                (fun e ->
-                  List.map (fun elem -> (rot90 t (fst elem), snd elem)) e)
-                k)
+        (rot90_lane h |> rot90_lane |> rot90_lane)
+        :: List.map (fun elem -> rot90_lane elem) (rot_lanes k)
   in
-  let rot_lanes = List.flatten (rot_lanes lanes) in
-  let rot_rot_rot_lanes =
-    List.map (fun e -> (fst e |> rot90 t |> rot90 t, snd e)) rot_lanes
-  in
-  List.iter (fun e -> set_cell t (fst e) (snd e)) rot_rot_rot_lanes
+  let textified_lanes = List.flatten (rot_lanes lanes) in
+  List.iter (fun e -> set_cell t (fst e) (snd e)) textified_lanes
 
 let calcSize () =
   let w, h = ANSITerminal.size () in
@@ -73,7 +71,7 @@ let calcSize () =
 let add_inter_cars canv wld =
   let cx, cy = center canv in
   let half = !unit_x / 16 in
-  let ne_nw_sw_se =
+  let nw_ne_se_sw =
     [|
       (cx - half, cy - half);
       (cx + half, cy - half);
@@ -87,7 +85,7 @@ let add_inter_cars canv wld =
       match e2 with
       | None -> ()
       | Some k -> set_cell canv e1 (car_to_string k))
-    ne_nw_sw_se carz
+    nw_ne_se_sw carz
 
 let flow_color_code flow =
   if flow = 0.0 then on_black
@@ -161,7 +159,7 @@ let rec render wld sps =
      \  S: %f\n\
      \  W: %f\n\
       %!"
-     flow.(3) flow.(2) flow.(1) flow.(0));
+     flow.(0) flow.(1) flow.(2) flow.(3));
   let new_wld = fst (Intersection.random_step wld) in
   (* print_string [] (Intersection.string_of_intersection wld); *)
   Unix.sleepf (1. /. float_of_int sps);

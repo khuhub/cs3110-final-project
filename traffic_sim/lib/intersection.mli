@@ -12,7 +12,7 @@ type t
 
 val set_rate : float -> int -> t -> t
 (** [set_rate f i t] is a intersection with the the rate of the lane at index
-    [i] in intersection [t] set to [f]. *)
+    [i] in intersection [t] set to [f]. NESW order. *)
 
 val get_rate : int -> t -> float
 (** [get_rate i f] is the rate of the lane at index [f]. *)
@@ -20,7 +20,7 @@ val get_rate : int -> t -> float
 val create : Car.t list array -> float array -> t
 (** [create c r] creates an intersection where each of its lanes have its rate
     set to the corresponding float in [r] and start off with each car in each
-    sublist in [c] being pushed to its corresponding lane. *)
+    sublist in [c] being pushed to its corresponding lane. NESW order. *)
 
 val empty : unit -> t
 (** [empty] is the intial state of the world. All lanes are empty, and traffic
@@ -35,7 +35,7 @@ val step : Car.t list array -> t -> t * Car.t option array
 (** [step t arr] is the resulting intersection after [t] increments one time
     step. Each car in each sublist in [arr] is pushed on the corresponding lane.
     - Raises: [Invalid_argument] if [Array.length arr] does not match the number
-      of lanes. *)
+      of lanes. NESW order *)
 
 val random_step : t -> t * Car.t option array
 (** [random_step t] is the resulting intersection after [t] increments one time
@@ -44,11 +44,11 @@ val random_step : t -> t * Car.t option array
 val cars_in_intersection : t -> Car.t option array
 (** [cars_in_intersection t] is the array of cars in the intersection [t] whose
     index in the array corresponds to their physical position in the
-    intersection. *)
+    intersection (NW, NE, SE, SW order) *)
 
 val list_lane_lights : t -> lane_light_pair list
 (** [list_lane_lights t] is the list of the all pairs of lights and lanes in the
-    intersection in a consistent order. *)
+    intersection in NESW order. *)
 
 val get_lane_pair : t -> int -> lane_light_pair
 (** [get_lane_pair t i] is the lane and light pair at index [i] in intersection
