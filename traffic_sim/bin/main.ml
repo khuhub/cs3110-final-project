@@ -20,15 +20,18 @@ let gencars =
     Car.Car.random_car ();
   ]
 
-let help =
-  "Welcome to our Traffic Simulator! \n\
-   Watch the flow of traffic in a four-way intersection. Cars are spawned with \
+let help_single =
+  "Watch the flow of traffic in a four-way intersection. Cars are spawned with \
    random turning directions and go through the intersection.\n\
-   By setting [set_flow_rate_into_lanes] to True, you'll be prompted to set \
-   the probability of cars spawning in each of the lanes each step. Otherwise, \
-   the default is 0.2. \n\
+   The default rate of flow is 0.2 cars/steps \n\
    The simulation will display the traffic flow exiting each lane. Check how \
    it compares to the traffic flow entering the lane!\n\
+  \   "
+
+let help_city =
+  "Watch the flow of traffic through a city. Cars are spawned at the corners \
+   of the city.\n\
+   Set the size of the city and the flow in the entry points. \n\
   \   "
 
 let get_rate = function
@@ -116,7 +119,7 @@ let run_city rows cols rate sps =
 
 let single =
   Command.basic ~summary:"Traffic Simulation - 4-Way Intersection"
-    ~readme:(fun () -> help)
+    ~readme:(fun () -> help_single)
     (let%map_open.Command useflow =
        flag "-f" no_arg ~doc:"specify traffic flow in"
      and usetraffic = flag "-t" no_arg ~doc:"specify initial traffic"
@@ -125,15 +128,15 @@ let single =
 
 let city =
   Command.basic ~summary:"Traffic Simulation - City Grid"
-    ~readme:(fun () -> help)
+    ~readme:(fun () -> help_city)
     (let%map_open.Command rows = anon ("Rows" %: int)
      and cols = anon ("Columns" %: int)
-     and rate = anon ("Rate (average cars/step)" %: float)
+     and rate = anon ("Rate" %: float)
      and sps = anon (maybe_with_default 1 ("Steps per second" %: int)) in
      fun () -> run_city rows cols rate sps)
 
 let command =
   Command.group ~summary:"Simulate Traffic"
-    [ ("Single Intersection", single); ("City Grid", city) ]
+    [ ("single", single); ("city", city) ]
 
 let () = Command_unix.run command
