@@ -25,19 +25,6 @@ let set_rate rate row col c =
   c.intersections.(row).(col) <- !i;
   c
 
-(*** let updated_intersection = match (row, col) with | 0, 0 ->
-  Intersection.set_rate rate 0 intersection |> Intersection.set_rate rate 3 | 0,
-  j when j <> max_c -> Intersection.set_rate rate 0 intersection | i, 0 when i
-  <> max_r -> Intersection.set_rate rate 3 intersection | 0, j when j = max_c ->
-  Intersection.set_rate rate 0 intersection |> Intersection.set_rate rate 1 | i,
-  0 when i = max_r -> Intersection.set_rate rate 2 intersection |>
-  Intersection.set_rate rate 3 | i, j when i = max_r && j = max_c ->
-  Intersection.set_rate rate 1 intersection |> Intersection.set_rate rate 2 | i,
-  j when i = max_r -> Intersection.set_rate rate 2 intersection | i, j when j =
-  max_c -> Intersection.set_rate rate 1 intersection | _ -> failwith "Invalid
-  intersection coordinates" in c.intersections.(row).(col) <-
-  updated_intersection; c**)
-
 let get_rate row col c =
   let intersection = c.intersections.(row).(col) in
   Array.init 4 (fun i -> Intersection.get_rate i intersection)
@@ -153,3 +140,10 @@ let get_intersections t = List.map Array.to_list (Array.to_list t.intersections)
 
 let get_dimensions t =
   (Array.length t.intersections, Array.length t.intersections.(0))
+
+let add_one_car car row col lane city =
+  let new_intersection =
+    Intersection.add_one_car city.intersections.(row).(col) lane car
+  in
+  city.intersections.(row).(col) <- new_intersection;
+  { city with cars = city.cars + 1 }

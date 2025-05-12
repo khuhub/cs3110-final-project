@@ -13,6 +13,10 @@ val create : int -> int -> float -> t
 (** [create rows cols rate] creates a city with the given number of row and
     columns, and the given rate on the four corners of the intersection.*)
 
+val add_one_car : Car.Car.t -> int -> int -> int -> t -> t
+(** [add_car_lst car i j l t] is the city [t] with the car [car] pushed on to
+    the lane [l] of the intersection at index [i][j]. *)
+
 val step : t -> t
 (** [step t] is the city [t] after one time step: each intersection in [t] has
     incremented its time step and each car in each lane has moved forward one
