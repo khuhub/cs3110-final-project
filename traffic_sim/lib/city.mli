@@ -15,6 +15,10 @@ val create : int -> int -> float -> t
     - Requires: rate is an decimal between [0.0] and [1.0], and [r] and [c] are
       positive integers. *)
 
+val add_one_car : Car.Car.t -> int -> int -> int -> t -> t
+(** [add_car_lst car i j l t] is the city [t] with the car [car] pushed on to
+    the lane [l] of the intersection at index [i][j]. *)
+
 val step : t -> t
 (** [step t] is the city [t] after one time step. Each intersection in [t] has
     incremented its time step and each car in each lane has moved forward one

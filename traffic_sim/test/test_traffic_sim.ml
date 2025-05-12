@@ -584,6 +584,45 @@ let city_tests =
          city_step_dimension_test test_city2 2 2;
          city_step_increments test_city1 10;
          city_step_increments test_city3 10;
+         ( "Step test" >:: fun _ ->
+           let city = ref (City.create 2 2 0.) in
+           assert_equal 0 City.(num_cars !city) ~printer:string_of_int;
+           assert_equal 0 City.(get_steps !city) ~printer:string_of_int;
+           city := City.add_one_car Car.straight_car 0 0 0 !city;
+           assert_equal 1 City.(num_cars !city) ~printer:string_of_int;
+           assert_equal 0 City.(get_steps !city) ~printer:string_of_int;
+           city := City.step !city;
+           assert_equal 1 City.(get_steps !city) ~printer:string_of_int;
+           let intersection =
+             ref (City.get_intersections !city |> List.hd |> List.hd)
+           in
+           assert_equal
+             [| Some Car.straight_car; None; None; None |]
+             (Intersection.cars_in_intersection !intersection)
+             ~printer:print_intersection;
+           city := City.step !city;
+           intersection := City.get_intersections !city |> List.hd |> List.hd;
+           assert_equal
+             [| None; None; None; Some Car.straight_car |]
+             (Intersection.cars_in_intersection !intersection)
+             ~printer:print_intersection;
+           city := City.step !city;
+           intersection := City.get_intersections !city |> List.hd |> List.hd;
+           assert_equal
+             [| None; None; None; None |]
+             (Intersection.cars_in_intersection !intersection)
+             ~printer:print_intersection;
+           assert_equal 0
+             (Intersection.get_num_cars !intersection)
+             ~printer:string_of_int;
+           intersection := List.nth (City.get_intersections !city) 1 |> List.hd;
+           assert_equal
+             [| None; None; None; None |]
+             (Intersection.cars_in_intersection !intersection)
+             ~printer:print_intersection;
+           assert_equal 1
+             (Intersection.get_num_cars !intersection)
+             ~printer:string_of_int );
        ]
 
 let () = run_test_tt_main city_tests

@@ -108,7 +108,7 @@ let can_enter_intersection c index oncoming_lane cars_in_intersection =
           match i_car with
           | None -> true
           | Some { car; enter_lane } ->
-              Car.get_turn car <> Left ) (** TODO: add ability to enter if left car is from same lane*)
+              Car.get_turn car <> Left) (** TODO: add ability to enter if left car is from same lane*)
         cars_in_intersection
   | Left ->
       (match Lane.peek_car oncoming_lane.lane with
@@ -118,7 +118,7 @@ let can_enter_intersection c index oncoming_lane cars_in_intersection =
            (fun i_car ->
              match i_car with
              | None -> true
-             | Some { car } -> Car.get_turn car = Left)
+             | Some { car; enter_lane } -> enter_lane = index)
            cars_in_intersection
 
 (** [spawn_car i index] returns [true] with probability equal to the spawn rate
@@ -132,7 +132,7 @@ let increment_light lane =
   { lane with light = TrafficLight.increment lane.light }
 
 (** [increment_intersection_cars i] is the resulting intersection cars array
-    after one time step. *)
+    and the popped cars array after one time step. *)
 let increment_intersection_cars i =
   let new_arr = Array.make 4 None in
   let popped_cars = Array.make 4 None in

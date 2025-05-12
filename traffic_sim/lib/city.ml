@@ -122,3 +122,10 @@ let get_intersections t = List.map Array.to_list (Array.to_list t.intersections)
 
 let get_dimensions t =
   (Array.length t.intersections, Array.length t.intersections.(0))
+
+let add_one_car car row col lane city =
+  let new_intersection =
+    Intersection.add_one_car city.intersections.(row).(col) lane car
+  in
+  city.intersections.(row).(col) <- new_intersection;
+  { city with cars = city.cars + 1 }
