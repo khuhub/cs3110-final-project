@@ -38,6 +38,9 @@ let car_to_string car =
   | Left -> "L"
   | Right -> "R"
   | Straight -> "S"
+  | Left -> "L"
+  | Right -> "R"
+  | Straight -> "S"
 
 (** NOTE: W S E N order*)
 let calc_traffic_flow wld =
@@ -56,6 +59,9 @@ let calc_traffic_flow wld =
 let rec textify_queue loc (q : Intersection.lane_light_pair) =
   let light_color =
     match TrafficLight.TrafficLight.get_color q.light with
+    | Green -> color "#00FF00" "G"
+    | Yellow -> color "#FFFF00" "Y"
+    | Red -> color "#FF0000" "R"
     | Green -> color "#00FF00" "G"
     | Yellow -> color "#FFFF00" "Y"
     | Red -> color "#FF0000" "R"
@@ -130,14 +136,14 @@ let textify_far wld u w h =
   set_cell canv (vec_add center (0, 0)) "x";
   set_cell canv (vec_add center (0, -1)) "x";
   for x = 1 to (u / w / 2) - 2 do
-    set_cell canv (vec_add center (0, x)) (flow_color_code flow.(1) "|");
+    set_cell canv (vec_add center (0, x)) ([ flow_color_code flow.(1) ], "|");
     set_cell canv
       (vec_add center (-1, (-1 * x) - 1))
-      (flow_color_code flow.(0) "|");
-    set_cell canv (vec_add center (x, -1)) (flow_color_code flow.(2) "-");
+      ([ flow_color_code flow.(0) ], "|");
+    set_cell canv (vec_add center (x, -1)) ([ flow_color_code flow.(2) ], "-");
     set_cell canv
       (vec_add center ((-1 * x) - 1, 0))
-      (flow_color_code flow.(3) "-")
+      ([ flow_color_code flow.(3) ], "-")
   done;
   canv
 
@@ -151,12 +157,15 @@ let textify wld u w h =
      (List.length lane_lights = 4); *)
   set_cell canv (cx, cy) "+";
   set_cell canv (cx, cy) "+";
+  set_cell canv (cx, cy) "+";
   let lb, ub = (cx - (!unit_x / 8), cx + (!unit_x / 8)) in
   for x = 0 to cx do
     for y = 0 to cy do
       if (x > lb && x < ub) && y > lb && y < ub then ()
       else (
         if x = lb || x = ub || y = lb || y = ub then
+          sym_set_cell canv (x, y) "*";
+        if x = cx || y = cy then sym_set_cell canv (x, y) "*")
           sym_set_cell canv (x, y) "*";
         if x = cx || y = cy then sym_set_cell canv (x, y) "*")
     done
@@ -172,6 +181,7 @@ let assert_RI t = failwith "Not yet implemented"
     and divided all those values by 8 in the above code.*)
 let rec render wld sps =
   let wld = textify wld 48 1 1 in
+  string_of_canvas wld
   string_of_canvas wld
 (* "Traffic Flow (cars exited / step) \n\ \ N: %f\n\ \ E: %f\n\ \ S: %f\n\ \ W:
    %f\n\ %!" flow.(0) flow.(1) flow.(2) flow.(3)); let new_wld = fst

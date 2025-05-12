@@ -230,6 +230,16 @@ let next_state_city (screen : city_menu) =
       { section = City_Simulation (create_city screen) }
   with Failure k -> { section = City_menu screen }
 
+let page_down (screen : start_menu) =
+  {
+    screen with
+    selected = (screen.selected + 1) mod List.length screen.options;
+  }
+
+let page_up (screen : start_menu) =
+  let len = List.length screen.options in
+  { screen with selected = (len + (screen.selected - 1)) mod len }
+
 let update event model =
   match model.section with
   | Start_menu t -> (
