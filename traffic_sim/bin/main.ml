@@ -69,13 +69,13 @@ let parse_traffic_string str =
 let get_rates_from_cl ask_for_rates =
   if ask_for_rates then (
     let arr = [| 0.0; 0.0; 0.0; 0.0 |] in
-    print_endline "Enter West Rate:";
-    arr.(0) <- get_rate (read_float_opt ());
-    print_endline "Enter South Rate:";
-    arr.(1) <- get_rate (read_float_opt ());
-    print_endline "Enter East Rate:";
-    arr.(2) <- get_rate (read_float_opt ());
     print_endline "Enter North Rate:";
+    arr.(0) <- get_rate (read_float_opt ());
+    print_endline "Enter East Rate:";
+    arr.(1) <- get_rate (read_float_opt ());
+    print_endline "Enter South Rate:";
+    arr.(2) <- get_rate (read_float_opt ());
+    print_endline "Enter West Rate:";
     arr.(3) <- get_rate (read_float_opt ());
     arr)
   else [| 0.2; 0.2; 0.2; 0.2 |]

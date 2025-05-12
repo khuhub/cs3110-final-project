@@ -43,7 +43,7 @@ let create_canvas u w h =
 (** rotates a point 90 degrees clockwise around the center of the given grid*)
 let rot90 t (a, b) =
   let cx, cy = center t in
-  (cx + (b - cy), cy - (a - cx))
+  (cx - (b - cy), cy + (a - cx))
 
 (** sets four cells in a symmetrical way around the center of the grid.*)
 let sym_set_cell (t : t) (a, b) str =
