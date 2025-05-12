@@ -145,21 +145,11 @@ let assert_RI t = failwith "Not yet implemented"
     (48) is kind of like 8 times the value we actually want. So I've gone ahead
     and divided all those values by 8 in the above code.*)
 let rec render wld sps =
-  print_canv (textify wld 48 1 1);
-  print_endline
-    ("Steps: "
-    ^ string_of_int (get_steps wld)
-    ^ "\tSteps Per Second: " ^ string_of_int sps);
-  (let flow = calc_traffic_flow wld in
-   Printf.printf
-     "Traffic Flow (cars exited / step) \n\
-     \  N: %f\n\
-     \  E: %f\n\
-     \  S: %f\n\
-     \  W: %f\n\
-      %!"
-     flow.(0) flow.(1) flow.(2) flow.(3));
-  let new_wld = fst (Intersection.random_step wld) in
-  (* print_string [] (Intersection.string_of_intersection wld); *)
-  Unix.sleepf (1. /. float_of_int sps);
-  render new_wld sps
+  let wld = textify wld 48 1 1 in
+  let actual = Array.map (fun a -> Array.map snd a) wld in
+  string_of_canvas actual
+(* "Traffic Flow (cars exited / step) \n\ \ N: %f\n\ \ E: %f\n\ \ S: %f\n\ \ W:
+   %f\n\ %!" flow.(0) flow.(1) flow.(2) flow.(3)); let new_wld = fst
+   (Intersection.random_step wld) in (* print_string []
+   (Intersection.string_of_intersection wld); *) Unix.sleepf (1. /. float_of_int
+   sps); render new_wld sps *)

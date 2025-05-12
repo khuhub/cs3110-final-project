@@ -115,18 +115,45 @@ let run_single sps ask_for_rates ask_for_traffic =
       (* (Intersection.create [| []; []; gencars; gencars |] [| 0.0; 0.0; 0.0;
          0.0 |]) *)
       sps
-  with Invalid_argument k -> print_endline ("Oops! " ^ k)
+  with Invalid_argument k -> "Oops! " ^ k
 
 let run_city rows cols rate sps =
   CityView.render (City.create rows cols rate) sps
 
-let initial_model = 0
+type model = {
+  intersection : Intersection.t;
+  spf : float;
+  last_frame : Ptime.t;
+}
+
+let initial_model =
+  {
+    intersection = Intersection.empty ();
+    spf = 0.1;
+    last_frame = Ptime_clock.now ();
+  }
+
 let init _ = Command.Seq [ Enter_alt_screen ]
 
 let update event model =
+  let new_model =
+    {
+      model with
+      intersection = fst (Intersection.random_step model.intersection);
+      last_frame = Ptime_clock.now ();
+    }
+  in
   match event with
-  | Event.KeyDown (Key "q") -> (model, Command.Quit)
-  | _ -> (model, Command.Noop)
+  | Event.KeyDown (Key "q") -> (new_model, Command.Quit)
+  | Event.Frame now ->
+      let delta = Ptime.diff now model.last_frame in
+      let delta = Float.abs (Ptime.Span.to_float_s delta) in
+      if delta >= model.spf then (new_model, Command.Noop)
+      else (model, Command.Noop)
+  | _ -> (new_model, Command.Noop)
 
-let view model = "()"
+let view model =
+  match model with
+  | { intersection } -> SingleView.render intersection 5
+
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model
