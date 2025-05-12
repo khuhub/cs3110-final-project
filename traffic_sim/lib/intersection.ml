@@ -222,5 +222,5 @@ let cars_in_intersection i =
       | Some { car } -> Some car)
     i.cars_in_intersection
 
-let list_lane_lights t = Array.to_list t.lanes
+let list_lane_lights t = List.rev (Array.fold_left (fun acc a -> a :: acc ) [] t.lanes)
 let get_num_cars i = i.num_cars

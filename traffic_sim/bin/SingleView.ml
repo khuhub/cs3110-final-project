@@ -60,7 +60,7 @@ let rec add_lanes t lane_light_list loc =
         (rot90_lane h |> rot90_lane |> rot90_lane)
         :: List.map (fun elem -> rot90_lane elem) (rot_lanes k)
   in
-  let textified_lanes = List.flatten (rot_lanes lanes) in
+  let textified_lanes = List.(lanes |> rot_lanes |> flatten) in
   List.iter (fun e -> set_cell t (fst e) (snd e)) textified_lanes
 
 let calcSize () =
@@ -114,7 +114,6 @@ let textify_far wld u w h =
       (vec_add center ((-1 * x) - 1, 0))
       ([ flow_color_code flow.(3) ], "-")
   done;
-
   canv
 
 (** [textify wld] is the representation of [wld] in the string matrix, with unit
@@ -163,6 +162,4 @@ let rec render wld sps =
   let new_wld = fst (Intersection.random_step wld) in
   (* print_string [] (Intersection.string_of_intersection wld); *)
   Unix.sleepf (1. /. float_of_int sps);
-  erase Screen;
-  set_cursor 0 0;
   render new_wld sps

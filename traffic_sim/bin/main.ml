@@ -1,6 +1,5 @@
 open Traffic_sim
-open Core
-open Command_unix
+open Minttea
 
 let () = Random.self_init ()
 
@@ -34,14 +33,19 @@ let help_city =
    Set the size of the city and the flow in the entry points. \n\
   \   "
 
+let rec list_from_string str : string list =
+  match str with
+  | "" -> []
+  | k -> String.(sub k 0 1 :: list_from_string (sub k 1 (length k - 1)))
+
 let get_rate = function
   | None -> 0.2
   | Some (k : float) ->
-      if Float.is_non_negative k then k
+      if k >= 0.0 then k
       else raise (Invalid_argument "Lane rates must be non-negative.")
 
 let parse_lane_rates lr =
-  List.to_array (List.map (String.split lr ~on:' ') ~f:float_of_string)
+  Array.of_list (List.map float_of_string (String.split_on_char ' ' lr))
 
 let get_ask_for = function
   | None -> false
@@ -51,31 +55,30 @@ let parse_traffic_string str =
   let strlst =
     match str with
     | None -> []
-    | Some k -> String.to_list k
+    | Some k -> list_from_string k
   in
   let f elem =
     match elem with
-    | 'R' -> Car.Car.right_car
-    | 'L' -> Car.Car.left_car
-    | 'S' -> Car.Car.straight_car
-    | '*' -> Car.Car.random_car ()
+    | "R" -> Car.Car.right_car
+    | "L" -> Car.Car.left_car
+    | "S" -> Car.Car.straight_car
+    | "*" -> Car.Car.random_car ()
     | k ->
         raise
-          (Invalid_argument
-             ("Unexpected character " ^ String.of_char k ^ " when entering cars"))
+          (Invalid_argument ("Unexpected character " ^ k ^ " when entering cars"))
   in
-  List.map strlst ~f
+  List.map f strlst
 
 let get_rates_from_cl ask_for_rates =
   if ask_for_rates then (
     let arr = [| 0.0; 0.0; 0.0; 0.0 |] in
-    print_endline "Enter West Rate:";
-    arr.(0) <- get_rate (read_float_opt ());
-    print_endline "Enter South Rate:";
-    arr.(1) <- get_rate (read_float_opt ());
-    print_endline "Enter East Rate:";
-    arr.(2) <- get_rate (read_float_opt ());
     print_endline "Enter North Rate:";
+    arr.(0) <- get_rate (read_float_opt ());
+    print_endline "Enter East Rate:";
+    arr.(1) <- get_rate (read_float_opt ());
+    print_endline "Enter South Rate:";
+    arr.(2) <- get_rate (read_float_opt ());
+    print_endline "Enter West Rate:";
     arr.(3) <- get_rate (read_float_opt ());
     arr)
   else [| 0.2; 0.2; 0.2; 0.2 |]
@@ -117,26 +120,13 @@ let run_single sps ask_for_rates ask_for_traffic =
 let run_city rows cols rate sps =
   CityView.render (City.create rows cols rate) sps
 
-let single =
-  Command.basic ~summary:"Traffic Simulation - 4-Way Intersection"
-    ~readme:(fun () -> help_single)
-    (let%map_open.Command useflow =
-       flag "-f" no_arg ~doc:"specify traffic flow in"
-     and usetraffic = flag "-t" no_arg ~doc:"specify initial traffic"
-     and sps = anon (maybe_with_default 5 ("Steps per second" %: int)) in
-     fun () -> run_single sps useflow usetraffic)
+let initial_model = 0
+let init _ = Command.Seq [ Enter_alt_screen ]
 
-let city =
-  Command.basic ~summary:"Traffic Simulation - City Grid"
-    ~readme:(fun () -> help_city)
-    (let%map_open.Command rows = anon ("Rows" %: int)
-     and cols = anon ("Columns" %: int)
-     and rate = anon ("Rate" %: float)
-     and sps = anon (maybe_with_default 1 ("Steps per second" %: int)) in
-     fun () -> run_city rows cols rate sps)
+let update event model =
+  match event with
+  | Event.KeyDown (Key "q") -> (model, Command.Quit)
+  | _ -> (model, Command.Noop)
 
-let command =
-  Command.group ~summary:"Simulate Traffic"
-    [ ("single", single); ("city", city) ]
-
-let () = Command_unix.run command
+let view model = "()"
+let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model

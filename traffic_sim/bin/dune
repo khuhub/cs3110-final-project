@@ -1,6 +1,6 @@
 (executable
  (public_name traffic_sim)
  (name main)
- (libraries traffic_sim unix ANSITerminal core core_unix.command_unix)
+ (libraries traffic_sim ANSITerminal minttea)
  (preprocess
   (pps ppx_jane)))
