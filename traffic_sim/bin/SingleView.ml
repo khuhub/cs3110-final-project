@@ -82,6 +82,7 @@ let rec add_lanes t lane_light_list loc =
         :: List.map (fun elem -> rot90_lane elem) (rot_lanes k)
   in
   let textified_lanes = List.(lanes |> rot_lanes |> flatten) in
+  let textified_lanes = List.(lanes |> rot_lanes |> flatten) in
   List.iter (fun e -> set_cell t (fst e) (snd e)) textified_lanes
 
 let calcSize () =
