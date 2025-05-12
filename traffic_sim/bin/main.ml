@@ -1,5 +1,7 @@
 open Traffic_sim
 open Minttea
+open Spices
+open Leaves
 
 let () = Random.self_init ()
 
@@ -120,40 +122,104 @@ let run_single sps ask_for_rates ask_for_traffic =
 let run_city rows cols rate sps =
   CityView.render (City.create rows cols rate) sps
 
-type model = {
+type start_menu = {
+  selected : int;
+  options : string list;
+}
+
+type single_menu = { selected : int }
+type city_menu = { selected : int }
+
+type simulation = {
   intersection : Intersection.t;
   spf : float;
   last_frame : Ptime.t;
 }
 
-let initial_model =
+type section =
+  | Start_menu of start_menu
+  | Single_menu of single_menu
+  | City_menu of city_menu
+  | Simulation of simulation
+
+type model = { section : section }
+
+let initial_intersection =
   {
-    intersection = Intersection.empty ();
+    intersection =
+      Intersection.create [| []; []; []; [] |] [| 0.2; 0.2; 0.2; 0.2 |];
     spf = 0.1;
     last_frame = Ptime_clock.now ();
   }
 
+let initial_model =
+  { section = Start_menu { selected = 0; options = [ "Single"; "City" ] } }
+
 let init _ = Command.Seq [ Enter_alt_screen ]
 
+let page_down (screen : start_menu) =
+  {
+    screen with
+    selected = (screen.selected + 1) mod List.length screen.options;
+  }
+
+let page_up (screen : start_menu) =
+  let len = List.length screen.options in
+  { screen with selected = (len + (screen.selected - 1)) mod len }
+
 let update event model =
-  let new_model =
-    {
-      model with
-      intersection = fst (Intersection.random_step model.intersection);
-      last_frame = Ptime_clock.now ();
-    }
-  in
-  match event with
-  | Event.KeyDown (Key "q") -> (new_model, Command.Quit)
-  | Event.Frame now ->
-      let delta = Ptime.diff now model.last_frame in
-      let delta = Float.abs (Ptime.Span.to_float_s delta) in
-      if delta >= model.spf then (new_model, Command.Noop)
-      else (model, Command.Noop)
-  | _ -> (new_model, Command.Noop)
+  match model.section with
+  | Start_menu t -> (
+      match event with
+      | Event.KeyDown Down ->
+          ({ section = Start_menu (page_down t) }, Command.Noop)
+      | Event.KeyDown Up -> ({ section = Start_menu (page_up t) }, Command.Noop)
+      | Event.KeyDown enter -> (
+          match t.selected with
+          | 0 -> ({ section = Simulation initial_intersection }, Command.Noop)
+          | 1 -> (model, Command.Noop)
+          | _ -> (model, Command.Noop))
+      | _ -> (model, Command.Noop))
+  | Single_menu t -> (model, Command.Noop)
+  | City_menu t -> (model, Command.Noop)
+  | Simulation t -> (
+      let new_model =
+        {
+          section =
+            Simulation
+              {
+                t with
+                intersection = fst (Intersection.random_step t.intersection);
+                last_frame = Ptime_clock.now ();
+              };
+        }
+      in
+      match event with
+      | Event.KeyDown (Key "q") -> (new_model, Command.Quit)
+      | Event.Frame now ->
+          let delta = Ptime.diff now t.last_frame in
+          let delta = Float.abs (Ptime.Span.to_float_s delta) in
+          if delta >= t.spf then (new_model, Command.Noop)
+          else (model, Command.Noop)
+      | _ -> (new_model, Command.Noop))
+
+let highlight fmt = Spices.(default |> fg (color "#FF06B7") |> build) fmt
 
 let view model =
-  match model with
-  | { intersection } -> SingleView.render intersection 5
+  match model.section with
+  | Simulation t -> SingleView.render t.intersection 5
+  | Start_menu t ->
+      let choices =
+        List.mapi
+          (fun idx choice ->
+            let checked = idx = t.selected in
+            let checkbox = Forms.checkbox ~checked choice in
+            if checked then highlight "%s" checkbox else checkbox)
+          t.options
+        |> String.concat "\n  "
+      in
+      Format.sprintf {| Select a simulation mode: 
+  %s |} choices
+  | _ -> "Hello World!"
 
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model

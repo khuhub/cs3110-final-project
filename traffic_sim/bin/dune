@@ -1,6 +1,6 @@
 (executable
  (public_name traffic_sim)
  (name main)
- (libraries traffic_sim ANSITerminal minttea)
+ (libraries traffic_sim ANSITerminal minttea spices leaves)
  (preprocess
   (pps ppx_jane)))
