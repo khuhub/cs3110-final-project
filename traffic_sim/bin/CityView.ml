@@ -41,9 +41,9 @@ let view_of_city city mode =
   in
   let intersections = City.get_intersections city in
   List.iteri
-    (fun x elem1 ->
+    (fun y elem1 ->
       List.iteri
-        (fun y elem2 -> set_tile canv mode (x, y) (gen_tile mode elem2))
+        (fun x elem2 -> set_tile canv mode (x, y) (gen_tile mode elem2))
         elem1)
     intersections;
   canv
