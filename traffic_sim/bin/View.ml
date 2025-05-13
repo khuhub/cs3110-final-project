@@ -52,7 +52,12 @@ let sym_set_cell (t : t) (a, b) str =
   set_cell t ((a, b) |> rot90 t |> rot90 t |> rot90 t) str
 
 let string_of_canvas canv =
-  Array.fold_left
-    (fun acc2 b ->
-      acc2 ^ Array.fold_left (fun acc a -> acc ^ " " ^ a) "" b ^ "\n")
-    "" canv
+  let str = ref "" in
+  let w, h = size canv in
+  for y = 0 to h - 1 do
+    for x = 0 to w - 1 do
+      str := !str ^ " " ^ canv.(x).(y)
+    done;
+    str := !str ^ "\n"
+  done;
+  !str

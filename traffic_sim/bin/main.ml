@@ -36,9 +36,7 @@ let help_city =
   \   "
 
 let rec list_from_string str : string list =
-  match str with
-  | "" -> []
-  | k -> String.(sub k 0 1 :: list_from_string (sub k 1 (length k - 1)))
+  String.fold_right (fun a acc -> String.make 1 a :: acc) str []
 
 let get_rate = function
   | None -> 0.2
@@ -54,11 +52,7 @@ let get_ask_for = function
   | Some s -> s
 
 let parse_traffic_string str =
-  let strlst =
-    match str with
-    | None -> []
-    | Some k -> list_from_string k
-  in
+  let str = list_from_string str in
   let f elem =
     match elem with
     | "R" -> Car.Car.right_car
@@ -69,7 +63,7 @@ let parse_traffic_string str =
         raise
           (Invalid_argument ("Unexpected character " ^ k ^ " when entering cars"))
   in
-  List.map f strlst
+  List.map f str
 
 let get_rates_from_cl ask_for_rates =
   if ask_for_rates then (
@@ -85,39 +79,25 @@ let get_rates_from_cl ask_for_rates =
     arr)
   else [| 0.2; 0.2; 0.2; 0.2 |]
 
-let get_traffic_from_cl ask_for_traffic =
-  if ask_for_traffic then (
-    let arr = [| []; []; []; [] |] in
-    print_endline
-      "Enter initial traffic in each lane. \n\
-       (R) is a right-turning car, \n\
-       (L) is left-turning, \n\
-       (S) is going straight, \n\
-       (*) is a random turn direction.\n\
-       Enter as one string without any other characters (e.g. SSLRR*) ";
-    print_endline "Enter North Traffic:";
-    arr.(0) <- parse_traffic_string In_channel.(input_line stdin);
-    print_endline "Enter East Traffic:";
-    arr.(1) <- parse_traffic_string In_channel.(input_line stdin);
-    print_endline "Enter South Traffic:";
-    arr.(2) <- parse_traffic_string In_channel.(input_line stdin);
-    print_endline "Enter West Traffic:";
-    arr.(3) <- parse_traffic_string In_channel.(input_line stdin);
-    arr)
-  else [| []; []; []; [] |]
+(* let get_traffic_from_cl ask_for_traffic = if ask_for_traffic then ( let arr =
+   [| []; []; []; [] |] in print_endline "Enter initial traffic in each lane.\n\
+   \ \n\ \ (R) is a right-turning car, \n\ \ (L) is left-turning, \n\ \ (S) is
+   going\n\ \ straight, \n\ \ (*) is a random turn direction.\n\ \ Enter as one
+   string without\n\ \ any other characters (e.g. SSLRR*) "; print_endline
+   "Enter North Traffic:"; arr.(0) <- parse_traffic_string
+   In_channel.(input_line stdin); print_endline "Enter East Traffic:"; arr.(1)
+   <- parse_traffic_string In_channel.(input_line stdin); print_endline "Enter
+   South Traffic:"; arr.(2) <- parse_traffic_string In_channel.(input_line
+   stdin); print_endline "Enter West Traffic:"; arr.(3) <- parse_traffic_string
+   In_channel.(input_line stdin); arr) else [| []; []; []; [] |] *)
 
-(** Make sure the sps arg is > 0 !!! *)
-let run_single sps ask_for_rates ask_for_traffic =
-  try
-    if sps < 0 then raise (Invalid_argument "Sps must lowkey be positive.");
-    let rates = get_rates_from_cl ask_for_rates in
-    let cars = get_traffic_from_cl ask_for_traffic in
-    SingleView.render
-      (Intersection.create cars rates)
-      (* (Intersection.create [| []; []; gencars; gencars |] [| 0.0; 0.0; 0.0;
-         0.0 |]) *)
-      sps
-  with Invalid_argument k -> "Oops! " ^ k
+(* * Make sure the sps arg is > 0 !!! let run_single sps ask_for_rates
+   ask_for_traffic = try if sps < 0 then raise (Invalid_argument "Sps must
+   lowkey be positive."); let rates = get_rates_from_cl ask_for_rates in let
+   cars = get_traffic_from_cl ask_for_traffic in SingleView.render
+   (Intersection.create cars rates) (* (Intersection.create [| []; []; gencars;
+   gencars |] [| 0.0; 0.0; 0.0; 0.0 |]) *) sps with Invalid_argument k -> "Oops!
+   " ^ k *)
 
 let run_city rows cols rate sps =
   CityView.render (City.create rows cols rate) sps
@@ -127,7 +107,14 @@ type start_menu = {
   options : string list;
 }
 
-type single_menu = { selected : int }
+type single_menu = {
+  current_prompt : int;
+  prompts : string array;
+  input : Text_input.t;
+  rates : float list;
+  cars : string list;
+}
+
 type city_menu = { selected : int }
 
 type simulation = {
@@ -152,10 +139,39 @@ let initial_intersection =
     last_frame = Ptime_clock.now ();
   }
 
+let create_intersection rates cars =
+  let cars = List.map parse_traffic_string cars in
+  let cars = Array.of_list cars in
+  let rates = Array.of_list rates in
+  {
+    intersection = Intersection.create cars rates;
+    spf = 0.1;
+    last_frame = Ptime_clock.now ();
+  }
+
 let initial_model =
   { section = Start_menu { selected = 0; options = [ "Single"; "City" ] } }
 
-let init _ = Command.Seq [ Enter_alt_screen ]
+let initial_single_menu =
+  {
+    current_prompt = 0;
+    prompts =
+      [|
+        "North Rate";
+        "East Rate";
+        "South Rate";
+        "West Rate";
+        "North Cars";
+        "East Cars";
+        "South Cars";
+        "West Cars";
+      |];
+    input = Text_input.empty ();
+    cars = [];
+    rates = [];
+  }
+
+let init _ = Command.Seq [ Enter_alt_screen; Hide_cursor ]
 
 let page_down (screen : start_menu) =
   {
@@ -167,6 +183,36 @@ let page_up (screen : start_menu) =
   let len = List.length screen.options in
   { screen with selected = (len + (screen.selected - 1)) mod len }
 
+let next_state (screen : single_menu) =
+  try
+    let input = String.trim @@ Text_input.current_text screen.input in
+    if screen.current_prompt < 4 then
+      {
+        section =
+          Single_menu
+            {
+              screen with
+              current_prompt = screen.current_prompt + 1;
+              rates = screen.rates @ [ float_of_string @@ String.trim input ];
+              input = Text_input.empty ();
+            };
+      }
+    else if screen.current_prompt < 7 then
+      {
+        section =
+          Single_menu
+            {
+              screen with
+              current_prompt = screen.current_prompt + 1;
+              cars = screen.cars @ [ input ];
+              input = Text_input.empty ();
+            };
+      }
+    else
+      let screen = { screen with cars = screen.cars @ [ input ] } in
+      { section = Simulation (create_intersection screen.rates screen.cars) }
+  with Failure k -> { section = Single_menu screen }
+
 let update event model =
   match model.section with
   | Start_menu t -> (
@@ -176,11 +222,19 @@ let update event model =
       | Event.KeyDown Up -> ({ section = Start_menu (page_up t) }, Command.Noop)
       | Event.KeyDown enter -> (
           match t.selected with
-          | 0 -> ({ section = Simulation initial_intersection }, Command.Noop)
+          | 0 -> ({ section = Single_menu initial_single_menu }, Command.Noop)
           | 1 -> (model, Command.Noop)
           | _ -> (model, Command.Noop))
       | _ -> (model, Command.Noop))
-  | Single_menu t -> (model, Command.Noop)
+  | Single_menu t -> (
+      match event with
+      | e ->
+          if e = Event.KeyDown Space then
+            ({ section = Simulation initial_intersection }, Command.Noop)
+          else if e = Event.KeyDown Enter then (next_state t, Command.Noop)
+          else
+            let text = Text_input.update t.input e in
+            ({ section = Single_menu { t with input = text } }, Command.Noop))
   | City_menu t -> (model, Command.Noop)
   | Simulation t -> (
       let new_model =
@@ -204,10 +258,14 @@ let update event model =
       | _ -> (new_model, Command.Noop))
 
 let highlight fmt = Spices.(default |> fg (color "#FF06B7") |> build) fmt
+let hint fmt = Spices.(default |> fg (color "241") |> build) fmt
 
 let view model =
   match model.section with
-  | Simulation t -> SingleView.render t.intersection 5
+  | Simulation t ->
+      Format.sprintf "%s \n%s"
+        (SingleView.render t.intersection 5)
+        (hint "Press q to quit.")
   | Start_menu t ->
       let choices =
         List.mapi
@@ -220,6 +278,15 @@ let view model =
       in
       Format.sprintf {| Select a simulation mode: 
   %s |} choices
+  | Single_menu t ->
+      Format.sprintf {|Enter %s: 
+  %s 
+%s|}
+        t.prompts.(t.current_prompt)
+        (Text_input.view t.input)
+        (hint
+           "Press Spacebar to skip and use defaults (0.2 cars/sec in all lanes \
+            and no initial cars)")
   | _ -> "Hello World!"
 
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model
