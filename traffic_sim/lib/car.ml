@@ -27,6 +27,9 @@ module type CarSig = sig
   val get_colorid : t -> int
   (** Gets the color id of the car. *)
 
+  val randomize_turn : t -> t
+  (** [randomize_turn t] returns [t] with a different turn. *)
+
   val string_of_car : t -> string
   (** [string_of_car c] string representation of car [c]. *)
 end
@@ -55,6 +58,7 @@ module Car : CarSig = struct
 
   let get_turn t = t.turn
   let get_colorid t = t.colorid
+  let randomize_turn t = { (random_car ()) with colorid = t.colorid }
 
   let string_of_car { turn } =
     match turn with

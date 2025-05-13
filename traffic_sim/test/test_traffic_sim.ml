@@ -6,6 +6,8 @@ open Intersection
 open Lane
 open TrafficLight
 
+let setup () = Random.self_init ()
+
 let string_of_array func arr =
   let elems = Array.map func arr in
   "[|" ^ String.concat "; " (Array.to_list elems) ^ "|]"
@@ -310,8 +312,6 @@ let qcheck_tests =
            prop_intersection_steps_increase;
          ]
 
-let () = run_test_tt_main qcheck_tests
-
 let unit_tests =
   "All Unit Tests"
   >::: [
@@ -329,8 +329,6 @@ let unit_tests =
          (* "yellow: left turn not allowed" >:: test_yellow_timing_left; *)
        ]
 
-let () = run_test_tt_main unit_tests
-
 (* Car tests *)
 let car_tests =
   "Car tests"
@@ -346,8 +344,6 @@ let car_tests =
            assert_bool "turn should be Left, Right, or Straight"
              (t = Left || t = Right || t = Straight) );
        ]
-
-let () = run_test_tt_main car_tests
 
 (* Lane tests *)
 
@@ -378,8 +374,6 @@ let lane_tests =
          ( "Changed lane rate" >:: fun _ ->
            assert_equal 0.5 Lane.(change_rate empty_lane 0.5 |> get_rate) );
        ]
-
-let () = run_test_tt_main lane_tests
 
 (**Traffic Light tests*)
 
@@ -423,9 +417,14 @@ let traffic_light_test =
          "Increment color" >:: test_increment_color;
        ]
 
-let () = run_test_tt_main traffic_light_test
-
 (* Intersection tests *)
+
+let string_of_int_array =
+  Array.fold_left
+    (fun acc -> function
+      | None -> acc ^ "| _ |"
+      | Some i -> acc ^ Printf.sprintf "| %i |" i)
+    ""
 
 let print_intersection i_cars =
   let s = ref "" in
@@ -446,6 +445,11 @@ let print_intersection i_cars =
           s := !s ^ car_s)
     i_cars;
   !s
+
+let cars_to_colorids =
+  Array.map (function
+    | None -> None
+    | Some c -> Some (Car.get_colorid c))
 
 let intersection_tests =
   "Intersection tests"
@@ -477,18 +481,17 @@ let intersection_tests =
                  1 Car.right_car)
            in
            assert_equal 2 (Intersection.get_num_cars i) );
-         ( "cars_in_intersection" >:: fun _ ->
+         ( "Popped car num" >:: fun _ ->
+           Intersection.(
+             add_one_car (empty ()) 0 Car.right_car
+             |> random_step |> fst |> random_step |> fst |> get_num_cars
+             |> assert_equal 0 ~printer:string_of_int
+                  ~msg:"Amount of cars should be 0 after being popped off.") );
+         ( "Cars pass through intersection correctly" >:: fun _ ->
+           let cars = [ Car.left_car; Car.straight_car; Car.right_car ] in
            let i =
              ref
-               Intersection.(
-                 create
-                   [|
-                     [ Car.left_car; Car.straight_car; Car.right_car ];
-                     [];
-                     [];
-                     [];
-                   |]
-                   [| 0.; 0.; 0.; 0. |])
+               Intersection.(create [| cars; []; []; [] |] [| 0.; 0.; 0.; 0. |])
            in
            assert_equal
              [| None; None; None; None |]
@@ -501,28 +504,49 @@ let intersection_tests =
              ~printer:print_intersection;
            i := fst (Intersection.random_step !i);
            assert_equal
-             [| None; None; None; Some Car.left_car |]
+             [| Some Car.straight_car; None; None; Some Car.left_car |]
              (Intersection.cars_in_intersection !i)
              ~printer:print_intersection;
            i := fst (Intersection.random_step !i);
            assert_equal
-             [| None; None; Some Car.left_car; None |]
+             [|
+               Some Car.right_car;
+               None;
+               Some Car.left_car;
+               Some Car.straight_car;
+             |]
              (Intersection.cars_in_intersection !i)
              ~printer:print_intersection;
-           i := fst (Intersection.random_step !i);
+           let intersection, carlst = Intersection.random_step !i in
+           i := intersection;
            assert_equal
-             [| Some Car.straight_car; None; None; None |]
+             [| None; None; None; None |]
              (Intersection.cars_in_intersection !i)
              ~printer:print_intersection;
-           i := fst (Intersection.random_step !i);
            assert_equal
-             [| Some Car.right_car; None; None; Some Car.straight_car |]
-             (Intersection.cars_in_intersection !i)
-             ~printer:print_intersection );
+             (cars_to_colorids
+                [|
+                  Some Car.right_car;
+                  None;
+                  Some Car.left_car;
+                  Some Car.straight_car;
+                |])
+             (cars_to_colorids carlst) ~printer:string_of_int_array );
+         ( "Step returns the correct array of popped cars" >:: fun _ ->
+           let cars = [ Car.left_car; Car.straight_car; Car.right_car ] in
+           assert_equal
+             (cars_to_colorids
+                [|
+                  Some (List.nth cars 2);
+                  None;
+                  Some (List.nth cars 0);
+                  Some (List.nth cars 1);
+                |])
+             (Intersection.(create [| cars; []; []; [] |] [| 0.; 0.; 0.; 0. |])
+             |> random_step |> fst |> random_step |> fst |> random_step |> fst
+             |> random_step |> snd |> cars_to_colorids)
+             ~printer:string_of_int_array );
        ]
-
-let () = run_test_tt_main intersection_tests
-
 (* City tests *)
 
 (**Test: creates city with accurate dimensions*)
@@ -561,6 +585,47 @@ let city_step_increments city steps =
     (steps + City.get_steps city)
     (City.get_steps c2) ~printer:string_of_int
 
+let increment_city city expected_intersection expected_car_count step_num =
+  Printf.printf "STEP %i:\n" step_num;
+  city := City.step !city;
+  assert_equal step_num (City.get_steps !city) ~printer:string_of_int
+    ~msg:"Incorrect number of steps.";
+  let intersection = City.get_intersections !city |> List.hd |> List.hd in
+  assert_equal expected_intersection
+    (Intersection.cars_in_intersection intersection)
+    ~printer:print_intersection ~msg:"Incorrect intersection.";
+  assert_equal expected_car_count (City.num_cars !city) ~printer:string_of_int
+    ~msg:"Incorrect amount of cars."
+
+let step_test =
+  "Step test" >:: fun _ ->
+  print_endline "STEP TEST:\n";
+  let city = ref (City.create 2 2 0.) in
+  city := City.add_one_car Car.straight_car 0 0 0 !city;
+  assert_equal 1
+    City.(num_cars !city)
+    ~printer:string_of_int ~msg:"Car count should be 1 after addition.";
+  assert_equal 0
+    City.(get_steps !city)
+    ~printer:string_of_int ~msg:"Initial step count should be 0";
+
+  increment_city city [| Some Car.straight_car; None; None; None |] 1 1;
+  increment_city city [| None; None; None; Some Car.straight_car |] 1 2;
+  increment_city city [| None; None; None; None |] 1 3;
+  print_endline "done stepping.";
+
+  let intersection = List.(hd (hd (City.get_intersections !city))) in
+  List.iteri
+    (fun i { lane } ->
+      assert_equal None (Lane.peek_car lane)
+        ~msg:"Should be no cars in each lane.")
+    (Intersection.list_lane_lights intersection);
+
+  assert_equal 0
+    (Intersection.get_num_cars intersection)
+    ~printer:string_of_int
+    ~msg:"Intersection should have 0 cars after popping off car."
+
 let test_city1 = City.create 1 1 0.5
 let test_city2 = City.create 2 2 0.5
 let test_city3 = City.create 5 5 0.5
@@ -584,45 +649,19 @@ let city_tests =
          city_step_dimension_test test_city2 2 2;
          city_step_increments test_city1 10;
          city_step_increments test_city3 10;
-         ( "Step test" >:: fun _ ->
-           let city = ref (City.create 2 2 0.) in
-           assert_equal 0 City.(num_cars !city) ~printer:string_of_int;
-           assert_equal 0 City.(get_steps !city) ~printer:string_of_int;
-           city := City.add_one_car Car.straight_car 0 0 0 !city;
-           assert_equal 1 City.(num_cars !city) ~printer:string_of_int;
-           assert_equal 0 City.(get_steps !city) ~printer:string_of_int;
-           city := City.step !city;
-           assert_equal 1 City.(get_steps !city) ~printer:string_of_int;
-           let intersection =
-             ref (City.get_intersections !city |> List.hd |> List.hd)
-           in
-           assert_equal
-             [| Some Car.straight_car; None; None; None |]
-             (Intersection.cars_in_intersection !intersection)
-             ~printer:print_intersection;
-           city := City.step !city;
-           intersection := City.get_intersections !city |> List.hd |> List.hd;
-           assert_equal
-             [| None; None; None; Some Car.straight_car |]
-             (Intersection.cars_in_intersection !intersection)
-             ~printer:print_intersection;
-           city := City.step !city;
-           intersection := City.get_intersections !city |> List.hd |> List.hd;
-           assert_equal
-             [| None; None; None; None |]
-             (Intersection.cars_in_intersection !intersection)
-             ~printer:print_intersection;
-           assert_equal 0
-             (Intersection.get_num_cars !intersection)
-             ~printer:string_of_int;
-           intersection := List.nth (City.get_intersections !city) 1 |> List.hd;
-           assert_equal
-             [| None; None; None; None |]
-             (Intersection.cars_in_intersection !intersection)
-             ~printer:print_intersection;
-           assert_equal 1
-             (Intersection.get_num_cars !intersection)
-             ~printer:string_of_int );
+         step_test;
        ]
 
-let () = run_test_tt_main city_tests
+let () =
+  setup ();
+  run_test_tt_main
+    ("All tests"
+    >::: [
+           qcheck_tests;
+           unit_tests;
+           car_tests;
+           lane_tests;
+           traffic_light_test;
+           intersection_tests;
+           city_tests;
+         ])

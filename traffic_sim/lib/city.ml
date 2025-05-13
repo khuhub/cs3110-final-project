@@ -74,43 +74,49 @@ let create rows cols rate =
 let get_steps c = c.steps
 let num_cars c = c.cars
 
-(** [step_intersections i cararr] returns an intersection that has been stepped
-    and adds all of the cars that were popped off to [cararr] *)
+(** [step_intersections i cararr] returns the intersection at [i][j] that has
+    been stepped and adds all of the cars that were popped off to [cararr] at
+    [i][j]. *)
 let step_intersections i j intersection cararr =
   let new_intersection_tuple = Intersection.random_step intersection in
   cararr.(i).(j) <- snd new_intersection_tuple;
   fst new_intersection_tuple
 
-let add_cars i j cars intersection_matrix =
+let move_car_after_step new_i new_j lane_index intersection_matrix
+    new_intersection_matrix car =
+  Printf.printf "\nAdded car to [%i][%i]\n" new_i new_j;
+  let new_intersection =
+    Intersection.add_one_car intersection_matrix.(new_i).(new_j) lane_index car
+  in
+  new_intersection_matrix.(new_i).(new_j) <- new_intersection
+
+(** [add_cars i j cars intersection_matrix] takes a list of cars [cars] that was
+    popped off from the intersection at index [i][j] and pushes them to the
+    correct lane of the correct intersection in [intersection_matrix]. Returns
+    the number of cars that exited the city (the cars that would be pushed to
+    invalid indexes of [intersection_matrix]). *)
+let add_cars i j cars intersection_matrix new_intersection_matrix =
   Array.iteri
-    (fun i car ->
+    (fun index car ->
       match car with
       | None -> ()
       | Some c -> (
           try
-            match i with
+            match index with
             | 0 ->
-                let new_i =
-                  Intersection.add_one_car intersection_matrix.(i - 1).(j) 2 c
-                in
-                intersection_matrix.(i - 1).(j) <- new_i
+                move_car_after_step i (j - 1) 1 intersection_matrix
+                  new_intersection_matrix c
             | 1 ->
-                let new_i =
-                  Intersection.add_one_car intersection_matrix.(i).(j + 1) 3 c
-                in
-                intersection_matrix.(i).(j + 1) <- new_i
+                move_car_after_step (i - 1) j 2 intersection_matrix
+                  new_intersection_matrix c
             | 2 ->
-                let new_i =
-                  Intersection.add_one_car intersection_matrix.(i + 1).(j) 0 c
-                in
-                intersection_matrix.(i + 1).(j) <- new_i
+                move_car_after_step i (j + 1) 3 intersection_matrix
+                  new_intersection_matrix c
             | 3 ->
-                let new_i =
-                  Intersection.add_one_car intersection_matrix.(i).(j - 1) 1 c
-                in
-                intersection_matrix.(i).(j - 1) <- new_i
+                move_car_after_step (i + 1) j 0 intersection_matrix
+                  new_intersection_matrix c
             | _ -> failwith "Invalid index"
-          with _ -> ()))
+          with _ -> Printf.printf "Pushed off intersection"))
     cars
 
 let step c =
@@ -120,6 +126,7 @@ let step c =
       (Array.length c.intersections.(0))
       [||]
   in
+
   let new_intersections =
     Array.mapi
       (fun i row ->
@@ -129,12 +136,44 @@ let step c =
       c.intersections
   in
 
+  Array.iter
+    (fun i ->
+      print_newline ();
+      Array.iter
+        (fun j ->
+          Array.iter
+            (function
+              | None -> print_string "| _ |"
+              | Some c -> print_string "| C |")
+            j;
+
+          print_string ",     ")
+        i)
+    new_cars;
+  print_newline ();
+
+  let new_intersections_cars_added = Array.copy new_intersections in
+
   Array.iteri
     (fun i row ->
-      Array.iteri (fun j cars -> add_cars i j cars new_intersections) row)
+      Array.iteri
+        (fun j cars ->
+          add_cars i j cars new_intersections new_intersections_cars_added)
+        row)
     new_cars;
 
-  { c with intersections = new_intersections; steps = c.steps + 1 }
+  let num_cars =
+    Array.fold_left
+      (fun acc i ->
+        Array.fold_left (fun acc j -> acc + Intersection.get_num_cars j) acc i)
+      0 new_intersections_cars_added
+  in
+
+  {
+    intersections = new_intersections_cars_added;
+    steps = c.steps + 1;
+    cars = num_cars;
+  }
 
 let get_intersections t = List.map Array.to_list (Array.to_list t.intersections)
 
