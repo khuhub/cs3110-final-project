@@ -51,22 +51,26 @@ let empty () =
 (** [add_cars lanes carlst_arr] pushes the cars in each sublist in [carlst_arr]
     to its corresponding lane. *)
 let add_cars i carlst_arr =
+  let num_added_cars = ref 0 in
   let rec add_cars_one_lane l = function
     | [] -> l
-    | h :: t -> add_cars_one_lane { l with lane = Lane.push_car h l.lane } t
+    | h :: t ->
+        num_added_cars := !num_added_cars + 1;
+        add_cars_one_lane { l with lane = Lane.push_car h l.lane } t
   in
   let lanes =
     Array.map2
       (fun lane_pair carlst -> add_cars_one_lane lane_pair carlst)
       i.lanes carlst_arr
   in
-  { i with lanes }
+  { i with lanes; num_cars = i.num_cars + !num_added_cars }
 
 let add_one_car i l car =
   let lane_pair = i.lanes.(l) in
   let new_lane = Lane.push_car car lane_pair.lane in
-  i.lanes.(l) <- { lane_pair with lane = new_lane };
-  { i with num_cars = i.num_cars + 1 }
+  let new_lanes = Array.copy i.lanes in
+  new_lanes.(l) <- { lane_pair with lane = new_lane };
+  { i with lanes = new_lanes; num_cars = i.num_cars + 1 }
 
 let get_lane_pair i index = Array.get i.lanes index
 
@@ -108,7 +112,7 @@ let can_enter_intersection c index oncoming_lane cars_in_intersection =
           match i_car with
           | None -> true
           | Some { car; enter_lane } ->
-              Car.get_turn car <> Left) (** TODO: add ability to enter if left car is from same lane*)
+              Car.get_turn car <> Left || enter_lane == index)
         cars_in_intersection
   | Left ->
       (match Lane.peek_car oncoming_lane.lane with
@@ -131,8 +135,8 @@ let spawn_car i index =
 let increment_light lane =
   { lane with light = TrafficLight.increment lane.light }
 
-(** [increment_intersection_cars i] is the resulting intersection cars array
-    and the popped cars array after one time step. *)
+(** [increment_intersection_cars i] is the resulting intersection cars array and
+    the popped cars array after one time step. *)
 let increment_intersection_cars i =
   let new_arr = Array.make 4 None in
   let popped_cars = Array.make 4 None in
@@ -146,13 +150,11 @@ let increment_intersection_cars i =
               ((index + 3) mod 4)
               (Some { c with steps_left = c.steps_left - 1 })
           else popped_cars.(index) <- Some c)
-      (*TODO: add function determining which lane to be added onto after
-        popped*)
     i.cars_in_intersection;
   (new_arr, popped_cars)
 
 (** [new_lanes i new_cars_in_intersection] is the resulting array of lanes after
-    one step. *)
+    one step and the sum of the amount of cars added to each lane. *)
 let increment_lanes i new_cars_in_intersection =
   let arr =
     Array.mapi
@@ -174,39 +176,57 @@ let increment_lanes i new_cars_in_intersection =
             else increment_light { lane; light })
       i.lanes
   in
-  Array.mapi
-    (fun index lane_pair ->
-      if spawn_car i index then
-        {
-          lane_pair with
-          lane = Lane.push_car (Car.random_car ()) lane_pair.lane;
-        }
-      else lane_pair)
-    arr
+  let num_added_cars = ref 0 in
+  let incremented_lanes =
+    Array.mapi
+      (fun index lane_pair ->
+        if spawn_car i index then (
+          num_added_cars := !num_added_cars + 1;
+          {
+            lane_pair with
+            lane = Lane.push_car (Car.random_car ()) lane_pair.lane;
+          })
+        else lane_pair)
+      arr
+  in
+  (incremented_lanes, !num_added_cars)
 
 let step carlst_arr i =
   if Array.length carlst_arr <> 4 then
     raise (Invalid_argument "Must have four elements.")
   else
-    let added_car_amount = ref 0 in
-    let new_cars_in_intersection = increment_intersection_cars i in
-    let new_cars =
+    let new_intersection_cars, popped_intersection_cars =
+      increment_intersection_cars i
+    in
+    let num_popped_cars =
+      Array.fold_left
+        (fun acc -> function
+          | None -> acc
+          | Some _ -> acc + 1)
+        0 popped_intersection_cars
+    in
+    let popped_cars =
       Array.map
         (fun x ->
           match x with
           | None -> None
-          | Some c ->
-              added_car_amount := !added_car_amount + 1;
-              Some c.car)
-        (fst new_cars_in_intersection)
+          | Some { car } -> Some (Car.randomize_turn car))
+        popped_intersection_cars
     in
+
+    let incremented_lanes, num_added_cars =
+      increment_lanes i new_intersection_cars
+    in
+    Printf.printf
+      "\n\nNum cars inital: %i\nNum cars added: %i\nNum cars removed: %i\n"
+      i.num_cars num_added_cars num_popped_cars;
     ( {
-        lanes = increment_lanes i (fst new_cars_in_intersection);
-        cars_in_intersection = fst new_cars_in_intersection;
+        lanes = incremented_lanes;
+        cars_in_intersection = new_intersection_cars;
         steps = i.steps + 1;
-        num_cars = i.num_cars + !added_car_amount;
+        num_cars = i.num_cars + num_added_cars - num_popped_cars;
       },
-      new_cars )
+      popped_cars )
 
 let random_step i =
   let carlst_arr =

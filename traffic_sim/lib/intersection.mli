@@ -34,6 +34,9 @@ val get_steps : t -> int
 val step : Car.t list array -> t -> t * Car.t option array
 (** [step t arr] is the resulting intersection after [t] increments one time
     step. Each car in each sublist in [arr] is pushed on the corresponding lane.
+    It also returns an array of the cars left the intersection during this step,
+    with their index in the array corresponding to the index of the intersection
+    they were last at.
     - Raises: [Invalid_argument] if [Array.length arr] does not match the number
       of lanes. NESW order *)
 
