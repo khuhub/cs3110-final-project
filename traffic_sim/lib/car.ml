@@ -44,7 +44,7 @@ module Car : CarSig = struct
 
       IR: None. *)
 
-  let generate_colorid () = Random.int 11
+  let generate_colorid () = Random.int 8
   let left_car = { turn = Left; colorid = generate_colorid () }
   let right_car = { turn = Right; colorid = generate_colorid () }
   let straight_car = { turn = Straight; colorid = generate_colorid () }
