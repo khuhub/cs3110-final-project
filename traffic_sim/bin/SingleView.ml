@@ -20,7 +20,20 @@ let color col fmt = Spices.(default |> fg (color col) |> build) fmt
 let map_list_loc ((a, b) : int * int) q =
   List.mapi (fun index e -> ((a + index, b), e)) q
 
+let color_of_car car =
+  match Car.Car.get_colorid car with
+  | 0 -> red
+  | 1 -> blue
+  | 2 -> cyan
+  | 3 -> green
+  | 4 -> magenta
+  | 5 -> yellow
+  | 6 -> white
+  | 7 -> default
+  | _ -> failwith "invalid color id"
+
 let car_to_string car =
+  let color = color_of_car car in
   match Car.Car.get_turn car with
   | Left -> "L"
   | Right -> "R"
