@@ -38,7 +38,7 @@ let create_canvas u w h =
   unit_y := u;
   let width = w * !unit_x in
   let height = h * !unit_y in
-  Array.make_matrix width height ([ on_black ], " ")
+  Array.make_matrix height width ([ on_black ], " ")
 
 (** rotates a point 90 degrees clockwise around the center of the given grid*)
 let rot90 t (a, b) =
