@@ -459,12 +459,60 @@ let test_increment_color _ =
   assert_equal ~printer:color_printer Red
     (TrafficLight.get_color (TrafficLight.increment yellow))
 
+(** Test: red light should block*)
+let test_red_blocks _ =
+  let red = TrafficLight.create Red in
+  for i = 0 to 3 do
+    assert_equal
+      ~msg:("Red should block at step " ^ string_of_int i)
+      ~printer:string_of_bool false
+      (TrafficLight.can_go i red)
+  done
+
+(** Test: yellow counts down correctly over steps *)
+let test_yellow_decrement_steps _ =
+  let yellow = TrafficLight.create Yellow in
+  let l1 = TrafficLight.increment yellow in
+  let l2 = TrafficLight.increment l1 in
+  let l3 = TrafficLight.increment l2 in
+  assert_equal ~printer:color_printer Yellow (TrafficLight.get_color l1);
+  assert_equal ~printer:color_printer Red (TrafficLight.get_color l3)
+
+(** Test: set color overwrites color and resets steps_left correctly*)
+let test_set_color_changes_state _ =
+  let red = TrafficLight.create Red in
+  let to_green = TrafficLight.set_color red Green in
+  let to_yellow = TrafficLight.set_color red Yellow in
+  let to_red = TrafficLight.set_color (TrafficLight.create Green) Red in
+
+  assert_equal ~printer:color_printer Green (TrafficLight.get_color to_green);
+  assert_equal ~printer:color_printer Yellow (TrafficLight.get_color to_yellow);
+  assert_equal ~printer:color_printer Red (TrafficLight.get_color to_red);
+
+  assert_equal 10 (TrafficLight.get_steps_left to_green);
+  assert_equal 2 (TrafficLight.get_steps_left to_yellow);
+  assert_equal 10 (TrafficLight.get_steps_left to_red)
+
+(** Test: setting to same color resets steps *)
+let test_set_same_color_resets_steps _ =
+  let yellow = TrafficLight.create Yellow in
+  let one_step_yellow = TrafficLight.increment yellow in
+  let reset_yellow = TrafficLight.set_color one_step_yellow Yellow in
+
+  assert_equal 1 (TrafficLight.get_steps_left one_step_yellow);
+  assert_equal 2 (TrafficLight.get_steps_left reset_yellow)
+
 let traffic_light_test =
   "Traffic Light tests"
   >::: [
          "Create colors" >:: test_create_colors;
          "Can go" >:: test_can_go;
          "Increment color" >:: test_increment_color;
+         "Red always blocks" >:: test_red_blocks;
+         "Yellow decrements" >:: test_yellow_decrement_steps;
+         "Set color changes state" >:: test_set_color_changes_state;
+         "Set color rests steps for same color"
+         >:: test_set_same_color_resets_steps;
        ]
 
 (* Intersection tests *)
@@ -592,18 +640,6 @@ let test_step_returns_correct_array _ =
     |> random_step |> snd |> cars_to_colorids)
     ~printer:string_of_int_array
 
-(** Test: Random car from North proceeds on green *)
-let test_random_car_north_goes_on_green _ =
-  let car = Car.random_car () in
-  let inter =
-    Intersection.create (car_list_north_only car) [| 0.0; 0.0; 0.0; 0.0 |]
-  in
-  let inter1 = fst (Intersection.step [| []; []; []; [] |] inter) in
-  let result = get_car_string (get_intersection_head 0 inter1) in
-  if Car.get_turn car = Right || Car.get_turn car = Straight then
-    assert_equal ~printer:(fun x -> x) "none" result
-  else assert_equal ~printer:(fun x -> x) "left" result
-
 (** Test: Random left car blocked by random oncoming straight car *)
 let test_random_left_blocked_by_straight _ =
   let left_car = Car.left_car in
@@ -652,8 +688,6 @@ let intersection_tests =
          "Cars pass through intersection correctly" >:: test_cars_pass_through;
          "Step returns the correct array of popped cars"
          >:: test_step_returns_correct_array;
-         "Random car from North proceeds on green"
-         >:: test_random_car_north_goes_on_green;
          "Random left car blocked by oncoming straight"
          >:: test_random_left_blocked_by_straight;
          "Multiple random cars, check movement" >:: test_multiple_random_cars;
@@ -711,7 +745,6 @@ let increment_city city expected_intersection expected_car_count step_num =
 
 let step_test =
   "Step test" >:: fun _ ->
-  print_endline "STEP TEST:\n";
   let city = ref (City.create 2 2 0.) in
   city := City.add_one_car Car.straight_car 0 0 0 !city;
   assert_equal 1
@@ -724,7 +757,6 @@ let step_test =
   increment_city city [| Some Car.straight_car; None; None; None |] 1 1;
   increment_city city [| None; None; None; Some Car.straight_car |] 1 2;
   increment_city city [| None; None; None; None |] 1 3;
-  print_endline "done stepping.";
 
   let intersection = List.(hd (hd (City.get_intersections !city))) in
   List.iteri

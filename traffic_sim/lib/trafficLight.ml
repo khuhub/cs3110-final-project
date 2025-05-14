@@ -27,6 +27,10 @@ module type TrafficLightSig = sig
   val set_color : t -> color -> t
   (** [set_color t c] is the resulting traffic light after setting the color of
       [t] to [c]. *)
+
+  val get_steps_left : t -> int
+  (** [get_steps_left t] returns the number of steps left for the current color
+      of the traffic light*)
 end
 
 module TrafficLight : TrafficLightSig = struct
@@ -67,4 +71,6 @@ module TrafficLight : TrafficLightSig = struct
     | Red -> { color = Red; steps_left = 10 }
     | Green -> { color = Green; steps_left = 10 }
     | Yellow -> { color = Yellow; steps_left = 2 }
+
+  let get_steps_left t = t.steps_left
 end
