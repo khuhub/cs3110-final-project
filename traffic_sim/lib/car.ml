@@ -40,9 +40,7 @@ module Car : CarSig = struct
     colorid : int;
   }
   (** AF: A value [car] of type [t] represents a car with it's intended
-      direction represented as a [turn].
-
-      IR: None. *)
+      direction represented as a [turn].*)
 
   let generate_colorid () = Random.int 8
   let left_car = { turn = Left; colorid = generate_colorid () }

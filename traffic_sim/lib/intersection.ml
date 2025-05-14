@@ -5,6 +5,8 @@ type lane_light_pair = {
   lane : Lane.t;
   light : TrafficLight.t;
 }
+(** A value of type [lane_light_pair] represents a lane and its corresponding
+    traffic light*)
 
 type intersection_car = {
   car : Car.t;
