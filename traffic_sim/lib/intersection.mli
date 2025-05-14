@@ -64,3 +64,4 @@ val add_one_car : t -> int -> Car.t -> t
     lane in the intersection. *)
 
 val get_num_cars : t -> int
+(** [get_num_cars] returns the number of cars that currentyl exist in [t]*)
