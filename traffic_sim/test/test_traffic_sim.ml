@@ -732,7 +732,6 @@ let city_step_increments city steps =
     (City.get_steps c2) ~printer:string_of_int
 
 let increment_city city expected_intersection expected_car_count step_num =
-  Printf.printf "STEP %i:\n" step_num;
   city := City.step !city;
   assert_equal step_num (City.get_steps !city) ~printer:string_of_int
     ~msg:"Incorrect number of steps.";
