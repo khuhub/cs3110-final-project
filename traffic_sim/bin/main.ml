@@ -3,6 +3,8 @@ open Minttea
 open Spices
 open Leaves
 
+let err fmt = Spices.(default |> fg (color "#FF0000") |> build) fmt
+
 let help_single =
   "Watch the flow of traffic in a four-way intersection. Cars are spawned with \
    random turning directions and go through the intersection.\n\
@@ -20,6 +22,13 @@ let help_city =
 let rec list_from_string str : string list =
   String.fold_right (fun a acc -> String.make 1 a :: acc) str []
 
+let parse_rate rate =
+  let rate =
+    try float_of_string rate
+    with Failure k -> raise @@ Failure (err "Enter a positive float")
+  in
+  if rate < 0.0 then raise @@ Failure (err "Enter a positive float.") else rate
+
 let parse_traffic_string str =
   let str = list_from_string str in
   let f elem =
@@ -30,9 +39,26 @@ let parse_traffic_string str =
     | "*" -> Car.Car.random_car ()
     | k ->
         raise
-          (Invalid_argument ("Unexpected character " ^ k ^ " when entering cars"))
+          (Invalid_argument
+             (err "Unexpected character "
+             ^ k
+             ^ err
+                 " when entering cars. Note: valid traffic strings are made of \
+                  S, L, R, and * for straight, left, right, and random \
+                  direction turning cars, respectively"))
   in
   List.map f str
+
+let parse_width_height dim zoom =
+  let dim = int_of_string dim in
+  if dim < 0 then raise @@ Failure (err "Enter a positive integer.")
+  else if zoom = CityView.Mid && dim > 3 then
+    raise
+    @@ Failure (err "Too large to be comfortably displayed: try 3 or less.")
+  else if zoom = CityView.Far && dim > 10 then
+    raise
+    @@ Failure (err "Too large to be comfortably displayed: try 10 or less.")
+  else dim
 
 type option_select =
   | Start
@@ -50,6 +76,7 @@ type single_menu = {
   input : Text_input.t;
   rates : float list;
   cars : Car.Car.t list list;
+  errormsg : string;
 }
 
 type city_menu = {
@@ -60,6 +87,7 @@ type city_menu = {
   width : int;
   height : int;
   rate : float;
+  errormsg : string;
 }
 
 type simulation = {
@@ -133,6 +161,7 @@ let initial_single_menu =
     input = Text_input.empty ();
     cars = [];
     rates = [];
+    errormsg = "";
   }
 
 let initial_city_submenu =
@@ -147,6 +176,7 @@ let initial_city_menu =
     width = 3;
     height = 3;
     rate = 0.2;
+    errormsg = "";
   }
 
 let init _ = Command.Seq [ Enter_alt_screen; Hide_cursor ]
@@ -171,8 +201,9 @@ let next_state_single (screen : single_menu) =
             {
               screen with
               current_prompt = screen.current_prompt + 1;
-              rates = screen.rates @ [ float_of_string @@ String.trim input ];
+              rates = screen.rates @ [ parse_rate @@ String.trim input ];
               input = Text_input.empty ();
+              errormsg = "";
             };
       }
     else if screen.current_prompt < 7 then
@@ -184,6 +215,7 @@ let next_state_single (screen : single_menu) =
               current_prompt = screen.current_prompt + 1;
               cars = screen.cars @ [ parse_traffic_string input ];
               input = Text_input.empty ();
+              errormsg = "";
             };
       }
     else
@@ -191,7 +223,8 @@ let next_state_single (screen : single_menu) =
         { screen with cars = screen.cars @ [ parse_traffic_string input ] }
       in
       { section = Simulation (create_intersection screen) }
-  with Failure k | Invalid_argument k -> { section = Single_menu screen }
+  with Failure k | Invalid_argument k ->
+    { section = Single_menu { screen with errormsg = k } }
 
 let next_state_city (screen : city_menu) =
   try
@@ -203,8 +236,9 @@ let next_state_city (screen : city_menu) =
             {
               screen with
               current_prompt = screen.current_prompt + 1;
-              width = int_of_string input;
+              width = parse_width_height input screen.zoom;
               input = Text_input.empty ();
+              errormsg = "";
             };
       }
     else if screen.current_prompt = 1 then
@@ -214,8 +248,9 @@ let next_state_city (screen : city_menu) =
             {
               screen with
               current_prompt = screen.current_prompt + 1;
-              height = int_of_string input;
+              height = parse_width_height input screen.zoom;
               input = Text_input.empty ();
+              errormsg = "";
             };
       }
     else
@@ -223,12 +258,13 @@ let next_state_city (screen : city_menu) =
         {
           screen with
           current_prompt = screen.current_prompt + 1;
-          rate = float_of_string input;
+          rate = parse_rate input;
           input = Text_input.empty ();
+          errormsg = "";
         }
       in
       { section = City_Simulation (create_city screen) }
-  with Failure k -> { section = City_menu screen }
+  with Failure k -> { section = City_menu { screen with errormsg = k } }
 
 let page_down (screen : start_menu) =
   {
@@ -356,18 +392,20 @@ let view model =
   | Single_menu t ->
       Format.sprintf {|Enter %s: 
   %s 
+%s
 %s|}
         t.prompts.(t.current_prompt)
-        (Text_input.view t.input)
+        (Text_input.view t.input) t.errormsg
         (hint
            "Press Spacebar to skip and use defaults (0.2 cars/sec in all lanes \
             and no initial cars)")
   | City_menu t ->
       Format.sprintf {|Enter %s: 
   %s 
+%s
 %s|}
         t.prompts.(t.current_prompt)
-        (Text_input.view t.input)
+        (Text_input.view t.input) t.errormsg
         (hint
            "Press Spacebar to skip and use defaults (0.2 cars/sec entering the \
             corners of the map and a city size of 3 by 3)")
