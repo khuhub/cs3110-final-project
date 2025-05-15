@@ -10,22 +10,22 @@ module type CarSig = sig
   (** [t] is a car defined by the direction it intends to turn. *)
 
   val left_car : t
-  (** A car with the intention to turn left. *)
+  (** [left_car] is a car with the intention to turn left. *)
 
   val right_car : t
-  (** A car with the intention to turn right. *)
+  (** [right_car] is a car with the intention to turn right. *)
 
   val straight_car : t
-  (** A car with the intention to continue straight. *)
+  (** [straight_car] is a car with the intention to continue straight. *)
 
   val random_car : unit -> t
-  (** A car with a random direction. *)
+  (** [random_car ()] is a car with a random direction. *)
 
   val get_turn : t -> turn
-  (** Gets the direction the car wants to turn. *)
+  (** [get_turn t] is the direction car [t] wants to turn. *)
 
   val string_of_car : t -> string
-  (** [string_of_car c] string representation of car [c]. *)
+  (** [string_of_car t] string representation of car [t]. *)
 end
 
 module Car : CarSig = struct
