@@ -48,7 +48,4 @@ let view_of_city city mode =
     intersections;
   canv
 
-let rec render city sps = ()
-(* print_canv (view_of_city city Mid); Unix.sleepf (1. /. float_of_int sps);
-   erase Screen; set_cursor 0 0; let new_wld = City.step city in render new_wld
-   sps *)
+let rec render city zoom = string_of_canvas (view_of_city city zoom)

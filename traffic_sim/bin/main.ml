@@ -102,9 +102,14 @@ let get_rates_from_cl ask_for_rates =
 let run_city rows cols rate sps =
   CityView.render (City.create rows cols rate) sps
 
+type option_select =
+  | Start
+  | Zoom
+
 type start_menu = {
   selected : int;
   options : string list;
+  selector : option_select;
 }
 
 type single_menu = {
@@ -115,11 +120,26 @@ type single_menu = {
   cars : string list;
 }
 
-type city_menu = { selected : int }
+type city_menu = {
+  current_prompt : int;
+  prompts : string array;
+  input : Text_input.t;
+  zoom : CityView.mode;
+  width : int;
+  height : int;
+  rate : float;
+}
 
 type simulation = {
   intersection : Intersection.t;
   spf : float;
+  last_frame : Ptime.t;
+}
+
+type city_simulation = {
+  city : City.t;
+  spf : float;
+  zoom : CityView.mode;
   last_frame : Ptime.t;
 }
 
@@ -128,6 +148,7 @@ type section =
   | Single_menu of single_menu
   | City_menu of city_menu
   | Simulation of simulation
+  | City_Simulation of city_simulation
 
 type model = { section : section }
 
@@ -149,8 +170,20 @@ let create_intersection rates cars =
     last_frame = Ptime_clock.now ();
   }
 
+let create_city screen =
+  {
+    city = City.create screen.width screen.height screen.rate;
+    spf = 0.1;
+    zoom = screen.zoom;
+    last_frame = Ptime_clock.now ();
+  }
+
 let initial_model =
-  { section = Start_menu { selected = 0; options = [ "Single"; "City" ] } }
+  {
+    section =
+      Start_menu
+        { selected = 0; options = [ "Single"; "City" ]; selector = Start };
+  }
 
 let initial_single_menu =
   {
@@ -171,6 +204,20 @@ let initial_single_menu =
     rates = [];
   }
 
+let initial_city_submenu =
+  { selected = 0; options = [ "Mid"; "Far" ]; selector = Zoom }
+
+let initial_city_menu =
+  {
+    current_prompt = 0;
+    prompts = [| "Width"; "Height"; "Rate" |];
+    input = Text_input.empty ();
+    zoom = Mid;
+    width = 3;
+    height = 3;
+    rate = 0.2;
+  }
+
 let init _ = Command.Seq [ Enter_alt_screen; Hide_cursor ]
 
 let page_down (screen : start_menu) =
@@ -183,7 +230,7 @@ let page_up (screen : start_menu) =
   let len = List.length screen.options in
   { screen with selected = (len + (screen.selected - 1)) mod len }
 
-let next_state (screen : single_menu) =
+let next_state_single (screen : single_menu) =
   try
     let input = String.trim @@ Text_input.current_text screen.input in
     if screen.current_prompt < 4 then
@@ -213,6 +260,43 @@ let next_state (screen : single_menu) =
       { section = Simulation (create_intersection screen.rates screen.cars) }
   with Failure k -> { section = Single_menu screen }
 
+let next_state_city (screen : city_menu) =
+  try
+    let input = String.trim @@ Text_input.current_text screen.input in
+    if screen.current_prompt = 0 then
+      {
+        section =
+          City_menu
+            {
+              screen with
+              current_prompt = screen.current_prompt + 1;
+              width = int_of_string input;
+              input = Text_input.empty ();
+            };
+      }
+    else if screen.current_prompt = 1 then
+      {
+        section =
+          City_menu
+            {
+              screen with
+              current_prompt = screen.current_prompt + 1;
+              height = int_of_string input;
+              input = Text_input.empty ();
+            };
+      }
+    else
+      let screen =
+        {
+          screen with
+          current_prompt = screen.current_prompt + 1;
+          rate = float_of_string input;
+          input = Text_input.empty ();
+        }
+      in
+      { section = City_Simulation (create_city screen) }
+  with Failure k -> { section = City_menu screen }
+
 let update event model =
   match model.section with
   | Start_menu t -> (
@@ -222,8 +306,18 @@ let update event model =
       | Event.KeyDown Up -> ({ section = Start_menu (page_up t) }, Command.Noop)
       | Event.KeyDown enter -> (
           match t.selected with
-          | 0 -> ({ section = Single_menu initial_single_menu }, Command.Noop)
-          | 1 -> (model, Command.Noop)
+          | 0 ->
+              if t.selector = Start then
+                ({ section = Single_menu initial_single_menu }, Command.Noop)
+              else
+                ( { section = City_menu { initial_city_menu with zoom = Mid } },
+                  Command.Noop )
+          | 1 ->
+              if t.selector = Start then
+                ({ section = Start_menu initial_city_submenu }, Command.Noop)
+              else
+                ( { section = City_menu { initial_city_menu with zoom = Far } },
+                  Command.Noop )
           | _ -> (model, Command.Noop))
       | _ -> (model, Command.Noop))
   | Single_menu t -> (
@@ -231,11 +325,21 @@ let update event model =
       | e ->
           if e = Event.KeyDown Space then
             ({ section = Simulation initial_intersection }, Command.Noop)
-          else if e = Event.KeyDown Enter then (next_state t, Command.Noop)
+          else if e = Event.KeyDown Enter then
+            (next_state_single t, Command.Noop)
           else
             let text = Text_input.update t.input e in
             ({ section = Single_menu { t with input = text } }, Command.Noop))
-  | City_menu t -> (model, Command.Noop)
+  | City_menu t -> (
+      match event with
+      | e ->
+          if e = Event.KeyDown Space then
+            ( { section = City_Simulation (create_city initial_city_menu) },
+              Command.Noop )
+          else if e = Event.KeyDown Enter then (next_state_city t, Command.Noop)
+          else
+            let text = Text_input.update t.input e in
+            ({ section = City_menu { t with input = text } }, Command.Noop))
   | Simulation t -> (
       let new_model =
         {
@@ -244,6 +348,26 @@ let update event model =
               {
                 t with
                 intersection = fst (Intersection.random_step t.intersection);
+                last_frame = Ptime_clock.now ();
+              };
+        }
+      in
+      match event with
+      | Event.KeyDown (Key "q") -> (new_model, Command.Quit)
+      | Event.Frame now ->
+          let delta = Ptime.diff now t.last_frame in
+          let delta = Float.abs (Ptime.Span.to_float_s delta) in
+          if delta >= t.spf then (new_model, Command.Noop)
+          else (model, Command.Noop)
+      | _ -> (new_model, Command.Noop))
+  | City_Simulation t -> (
+      let new_model =
+        {
+          section =
+            City_Simulation
+              {
+                t with
+                city = City.step t.city;
                 last_frame = Ptime_clock.now ();
               };
         }
@@ -266,6 +390,10 @@ let view model =
       Format.sprintf "%s \n%s"
         (SingleView.render t.intersection 5)
         (hint "Press q to quit.")
+  | City_Simulation t ->
+      Format.sprintf "%s \n%s"
+        (CityView.render t.city t.zoom)
+        (hint "Press q to quit.")
   | Start_menu t ->
       let choices =
         List.mapi
@@ -276,8 +404,12 @@ let view model =
           t.options
         |> String.concat "\n  "
       in
-      Format.sprintf {| Select a simulation mode: 
-  %s |} choices
+      let fmt =
+        if t.selector = Start then "Select a simulation mode:"
+        else "Select a zoom level:"
+      in
+      Format.sprintf {| %s 
+  %s |} fmt choices
   | Single_menu t ->
       Format.sprintf {|Enter %s: 
   %s 
@@ -287,6 +419,14 @@ let view model =
         (hint
            "Press Spacebar to skip and use defaults (0.2 cars/sec in all lanes \
             and no initial cars)")
-  | _ -> "Hello World!"
+  | City_menu t ->
+      Format.sprintf {|Enter %s: 
+  %s 
+%s|}
+        t.prompts.(t.current_prompt)
+        (Text_input.view t.input)
+        (hint
+           "Press Spacebar to skip and use defaults (0.2 cars/sec in all lanes \
+            and no initial cars)")
 
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model

@@ -91,29 +91,35 @@ let add_inter_cars canv wld =
       | Some k -> set_cell canv e1 (car_to_string k))
     nw_ne_se_sw carz
 
-(** TODO REIMPLEMENT USING SPICES styling*)
+(** [flow_color_code flow] creates the correct styling for the given traffic
+    flow. *)
 let flow_color_code flow =
-  if flow = 0.0 then on_black
-  else if flow < 0.0 then on_blue
-  else if flow < 0.1 then on_cyan
-  else if flow < 0.2 then on_green
-  else if flow < 0.3 then on_magenta
-  else if flow < 0.4 then on_yellow
-  else on_red
+  if flow = 0.0 then color "#00FF00"
+  else if flow < 0.1 then color "#FFEEEE"
+  else if flow < 0.2 then color "#FFBBBB"
+  else if flow < 0.3 then color "#FF7777"
+  else if flow < 0.4 then color "#FF4444"
+  else if flow < 0.5 then color "#FF2222"
+  else color "#FF0000"
 
 let textify_far wld u w h =
   let canv = create_canvas u w h in
   let center = vec_add (center canv) (-1, -1) in
+  let flow = calc_traffic_flow wld in
   (* let flow = calc_traffic_flow wld in *)
   set_cell canv (vec_add center (-1, -1)) "x";
   set_cell canv (vec_add center (-1, 0)) "x";
   set_cell canv (vec_add center (0, 0)) "x";
   set_cell canv (vec_add center (0, -1)) "x";
   for x = 1 to (u / w / 2) - 2 do
-    set_cell canv (vec_add center (0, x)) "|";
-    set_cell canv (vec_add center (-1, (-1 * x) - 1)) "|";
-    set_cell canv (vec_add center (x, -1)) "-";
-    set_cell canv (vec_add center ((-1 * x) - 1, 0)) "-"
+    set_cell canv (vec_add center (0, x)) (flow_color_code flow.(1) "|");
+    set_cell canv
+      (vec_add center (-1, (-1 * x) - 1))
+      (flow_color_code flow.(0) "|");
+    set_cell canv (vec_add center (x, -1)) (flow_color_code flow.(2) "-");
+    set_cell canv
+      (vec_add center ((-1 * x) - 1, 0))
+      (flow_color_code flow.(3) "-")
   done;
   canv
 
