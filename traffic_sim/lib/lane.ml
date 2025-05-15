@@ -14,7 +14,7 @@ type t = {
       the queue with head [x1] and tail [xn]
     - [lane.rate] is the rate at which traffic enters the lane.
 
-    RI: [lane.rate >= 0] *)
+    RI: [lane.rate >= 0.], [lane.output >= 0] *)
 
 let empty_lane = { queue = []; rate = 0.; output = 0 }
 

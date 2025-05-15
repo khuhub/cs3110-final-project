@@ -1,9 +1,9 @@
 type t
-(**A city is a collection of intersections*)
+(** A value of type [t] is a city, which is a collection of intersections. *)
 
 val set_rate : float -> int -> int -> t -> t
 (** [set_rate rate i j t] is the city [t] with the rate of the intersection at
-    index [i][j] in intersection [t] set to [rate]. *)
+    index [i][j] in [t] set to [rate]. *)
 
 val get_rate : int -> int -> t -> float array
 (** [get_rate i j t] is an array of rates in NESW order for each lane of the
@@ -17,7 +17,7 @@ val create : int -> int -> float -> t
 
 val add_one_car : Car.Car.t -> int -> int -> int -> t -> t
 (** [add_car_lst car i j l t] is the city [t] with the car [car] pushed on to
-    the lane [l] of the intersection at index [i][j]. *)
+    the lane [l] of the intersection at index [i][j] in [t]. *)
 
 val step : t -> t
 (** [step t] is the city [t] after one time step. Each intersection in [t] has

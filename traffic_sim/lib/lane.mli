@@ -18,15 +18,15 @@ val push_car : Car.t -> t -> t
 (** [push_car t c] adds car [c] to the back of lane [t]. *)
 
 val pop_car : t -> (Car.t * t) option
-(** [pop_car t ] is tuple containing the head of [t] and tail of [t], or [None]
-    if [t] is empty. *)
+(** [pop_car t ] is tuple containing the car that was popped from [t] and the
+    resulting lane, or [None] if [t] is empty. *)
 
 val get_rate : t -> float
 (** [get_rate t] is the rate of traffic flow in lane [t]. *)
 
 val change_rate : t -> float -> t
-(** [change_rate t r] is a copy of lane [t] with a rate of traffic flow of [r].
-*)
+(** [change_rate t r] is the same lane [t] but with a rate of traffic flow of
+    [r]. *)
 
 val get_output : t -> int
 (** [get_output t] is the number of cars which have exited the lane since the

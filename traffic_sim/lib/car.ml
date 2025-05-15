@@ -4,7 +4,7 @@ type turn =
   | Right
   | Straight
 
-(** Module type representing a car approaching an intersection. *)
+(** Module representing a car approaching an intersection. *)
 module type CarSig = sig
   type t
   (** [t] is a car defined by the direction it intends to turn. *)
@@ -25,7 +25,7 @@ module type CarSig = sig
   (** [get_turn t] is the direction car [t] wants to turn. *)
 
   val get_colorid : t -> int
-  (** Gets the color id of the car. *)
+  (** [get_colorid t] is the color ID of car [t]. *)
 
   val randomize_turn : t -> t
   (** [randomize_turn t] returns [t] with a different turn. *)
@@ -40,7 +40,9 @@ module Car : CarSig = struct
     colorid : int;
   }
   (** AF: A value [car] of type [t] represents a car with it's intended
-      direction represented as a [turn].*)
+      direction represented as a [turn].
+
+      RI: [car.colorid] must be a integer between [0] and [8] inclusive. *)
 
   let generate_colorid () = Random.int 9
   let left_car = { turn = Left; colorid = generate_colorid () }

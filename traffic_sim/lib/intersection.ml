@@ -6,7 +6,7 @@ type lane_light_pair = {
   light : TrafficLight.t;
 }
 (** A value of type [lane_light_pair] represents a lane and its corresponding
-    traffic light*)
+    traffic light. *)
 
 type intersection_car = {
   car : Car.t;
@@ -14,7 +14,7 @@ type intersection_car = {
   steps_left : int;
 }
 (** A value [i] of type [intersection_car] represents a car in an intersection.
-    - Invariant: [i.steps_left] must be a non-negative integer. *)
+    - RI: [i.steps_left] must be a non-negative integer. *)
 
 type t = {
   lanes : lane_light_pair array;
@@ -27,7 +27,7 @@ type t = {
       intersection, with each element of the list corresponding to the North,
       East, South, and West lanes respectively based on their index.
     - [i.cars_in_intersection] is the array of cars currently passing through
-      the intersection.
+      the intersection represented as an array in (NW, NE, SE, SW order).
     - [i.steps] is how many steps have elapsed.
 
     RI: [steps >= 0] and [List.length lanes = 4]*)
@@ -50,8 +50,9 @@ let empty () =
     num_cars = 0;
   }
 
-(** [add_cars lanes carlst_arr] pushes the cars in each sublist in [carlst_arr]
-    to its corresponding lane. *)
+(** [add_cars i carlst_arr] pushes the cars from each sublist in [carlst_arr] in
+    NESW order to its corresponding lane in intersection [i].
+    - Requires: [Array.length carlst_arr = 4]*)
 let add_cars i carlst_arr =
   let num_added_cars = ref 0 in
   let rec add_cars_one_lane l = function
@@ -76,6 +77,8 @@ let add_one_car i l car =
 
 let get_lane_pair i index = Array.get i.lanes index
 
+(** [set_rate_one rate index i] returns the lane_light_pair of the lane at index
+    [index] in intersection [i] with the rate set to [rate]. *)
 let set_rate_one rate index i =
   let { lane; light } = get_lane_pair i index in
   { lane = Lane.change_rate lane rate; light }
@@ -85,6 +88,9 @@ let set_rate rate index i =
   Array.set i.lanes index { lane with lane = Lane.change_rate lane.lane rate };
   i
 
+(** [set_rate_whole rate_arr i] returns the same intersection as [i] but with
+    the rate of each lane in [i] set to the corresponding element in [rate_arr]
+    in NESW order. *)
 let set_rate_whole rate_arr i =
   let lane_arr = Array.mapi (fun index r -> set_rate_one r index i) rate_arr in
   { i with lanes = lane_arr }
@@ -105,7 +111,7 @@ let car_to_steps_left c =
   | Left -> 2
 
 (** [can_enter_intersection c oncoming_lane i] is if car [c] can enter the
-    intersection. *)
+    intersection [i]. *)
 let can_enter_intersection c index oncoming_lane cars_in_intersection =
   match Car.get_turn c with
   | Right | Straight ->
