@@ -77,6 +77,7 @@ type single_menu = {
   rates : float list;
   cars : Car.Car.t list list;
   errormsg : string;
+  fps : float;
 }
 
 type city_menu = {
@@ -88,6 +89,7 @@ type city_menu = {
   height : int;
   rate : float;
   errormsg : string;
+  fps : float;
 }
 
 type simulation = {
@@ -116,7 +118,7 @@ let initial_intersection =
   {
     intersection =
       Intersection.create [| []; []; []; [] |] [| 0.2; 0.2; 0.2; 0.2 |];
-    spf = 0.1;
+    spf = 0.2;
     last_frame = Ptime_clock.now ();
   }
 
@@ -125,14 +127,14 @@ let create_intersection screen =
   let rates = Array.of_list screen.rates in
   {
     intersection = Intersection.create cars rates;
-    spf = 0.1;
+    spf = 1.0 /. screen.fps;
     last_frame = Ptime_clock.now ();
   }
 
 let create_city screen =
   {
     city = City.create screen.width screen.height screen.rate;
-    spf = 0.1;
+    spf = 1.0 /. screen.fps;
     zoom = screen.zoom;
     last_frame = Ptime_clock.now ();
   }
@@ -157,11 +159,13 @@ let initial_single_menu =
         "East Cars";
         "South Cars";
         "West Cars";
+        "Simulation Speed (steps/sec)";
       |];
     input = Text_input.empty ();
     cars = [];
     rates = [];
     errormsg = "";
+    fps = 0.0;
   }
 
 let initial_city_submenu =
@@ -170,13 +174,14 @@ let initial_city_submenu =
 let initial_city_menu =
   {
     current_prompt = 0;
-    prompts = [| "Width"; "Height"; "Rate" |];
+    prompts = [| "Width"; "Height"; "Rate"; "Simulation Speed (steps/sec)" |];
     input = Text_input.empty ();
     zoom = Mid;
     width = 3;
     height = 3;
     rate = 0.2;
     errormsg = "";
+    fps = 2.0;
   }
 
 let init _ = Command.Seq [ Enter_alt_screen; Hide_cursor ]
@@ -206,7 +211,7 @@ let next_state_single (screen : single_menu) =
               errormsg = "";
             };
       }
-    else if screen.current_prompt < 7 then
+    else if screen.current_prompt < 8 then
       {
         section =
           Single_menu
@@ -219,9 +224,7 @@ let next_state_single (screen : single_menu) =
             };
       }
     else
-      let screen =
-        { screen with cars = screen.cars @ [ parse_traffic_string input ] }
-      in
+      let screen = { screen with fps = parse_rate input } in
       { section = Simulation (create_intersection screen) }
   with Failure k | Invalid_argument k ->
     { section = Single_menu { screen with errormsg = k } }
@@ -253,16 +256,20 @@ let next_state_city (screen : city_menu) =
               errormsg = "";
             };
       }
+    else if screen.current_prompt = 2 then
+      {
+        section =
+          City_menu
+            {
+              screen with
+              current_prompt = screen.current_prompt + 1;
+              rate = parse_rate input;
+              input = Text_input.empty ();
+              errormsg = "";
+            };
+      }
     else
-      let screen =
-        {
-          screen with
-          current_prompt = screen.current_prompt + 1;
-          rate = parse_rate input;
-          input = Text_input.empty ();
-          errormsg = "";
-        }
-      in
+      let screen = { screen with fps = parse_rate input } in
       { section = City_Simulation (create_city screen) }
   with Failure k -> { section = City_menu { screen with errormsg = k } }
 
@@ -313,7 +320,11 @@ let update event model =
       match event with
       | e ->
           if e = Event.KeyDown Space then
-            ( { section = City_Simulation (create_city initial_city_menu) },
+            ( {
+                section =
+                  City_Simulation
+                    (create_city { initial_city_menu with zoom = t.zoom });
+              },
               Command.Noop )
           else if e = Event.KeyDown Enter then (next_state_city t, Command.Noop)
           else
@@ -398,7 +409,7 @@ let view model =
         (Text_input.view t.input) t.errormsg
         (hint
            "Press Spacebar to skip and use defaults (0.2 cars/sec in all lanes \
-            and no initial cars)")
+            and no initial cars, 5 steps/second)")
   | City_menu t ->
       Format.sprintf {|Enter %s: 
   %s 
@@ -408,6 +419,6 @@ let view model =
         (Text_input.view t.input) t.errormsg
         (hint
            "Press Spacebar to skip and use defaults (0.2 cars/sec entering the \
-            corners of the map and a city size of 3 by 3)")
+            corners of the map and a city size of 3 by 3, 2 steps/second )")
 
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model
