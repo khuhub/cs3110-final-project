@@ -426,7 +426,7 @@ let view model =
         t.prompts.(t.current_prompt)
         (Text_input.view t.input)
         (hint
-           "Press Spacebar to skip and use defaults (0.2 cars/sec in all lanes \
-            and no initial cars)")
+           "Press Spacebar to skip and use defaults (0.2 cars/sec entering the \
+            corners of the map and a city size of 3 by 3)")
 
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model
