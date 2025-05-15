@@ -61,7 +61,6 @@ let step_intersections i j intersection cararr =
 
 let move_car_after_step new_i new_j lane_index intersection_matrix
     new_intersection_matrix car =
-  Printf.printf "\nAdded car to [%i][%i]\n" new_i new_j;
   let new_intersection =
     Intersection.add_one_car intersection_matrix.(new_i).(new_j) lane_index car
   in
@@ -93,7 +92,7 @@ let add_cars i j cars intersection_matrix new_intersection_matrix =
                 move_car_after_step (i + 1) j 0 intersection_matrix
                   new_intersection_matrix c
             | _ -> failwith "Invalid index"
-          with _ -> Printf.printf "Pushed off intersection"))
+          with _ -> ()))
     cars
 
 let step c =
@@ -112,22 +111,6 @@ let step c =
           row)
       c.intersections
   in
-
-  Array.iter
-    (fun i ->
-      print_newline ();
-      Array.iter
-        (fun j ->
-          Array.iter
-            (function
-              | None -> print_string "| _ |"
-              | Some c -> print_string "| C |")
-            j;
-
-          print_string ",     ")
-        i)
-    new_cars;
-  print_newline ();
 
   let new_intersections_cars_added = Array.copy new_intersections in
 

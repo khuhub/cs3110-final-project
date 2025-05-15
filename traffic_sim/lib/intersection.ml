@@ -219,9 +219,6 @@ let step carlst_arr i =
     let incremented_lanes, num_added_cars =
       increment_lanes i new_intersection_cars
     in
-    Printf.printf
-      "\n\nNum cars inital: %i\nNum cars added: %i\nNum cars removed: %i\n"
-      i.num_cars num_added_cars num_popped_cars;
     ( {
         lanes = incremented_lanes;
         cars_in_intersection = new_intersection_cars;
