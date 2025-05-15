@@ -65,6 +65,7 @@ let parse_traffic_string str =
   in
   List.map f str
 
+<<<<<<< Updated upstream
 let get_rates_from_cl ask_for_rates =
   if ask_for_rates then (
     let arr = [| 0.0; 0.0; 0.0; 0.0 |] in
@@ -129,6 +130,18 @@ type city_menu = {
   height : int;
   rate : float;
 }
+=======
+let run_city rows cols rate sps =
+  CityView.render (City.create rows cols rate) sps
+
+type start_menu = {
+  selected : int;
+  options : string list;
+}
+
+type single_menu = { selected : int }
+type city_menu = { selected : int }
+>>>>>>> Stashed changes
 
 type simulation = {
   intersection : Intersection.t;
@@ -136,6 +149,7 @@ type simulation = {
   last_frame : Ptime.t;
 }
 
+<<<<<<< Updated upstream
 type city_simulation = {
   city : City.t;
   spf : float;
@@ -143,12 +157,17 @@ type city_simulation = {
   last_frame : Ptime.t;
 }
 
+=======
+>>>>>>> Stashed changes
 type section =
   | Start_menu of start_menu
   | Single_menu of single_menu
   | City_menu of city_menu
   | Simulation of simulation
+<<<<<<< Updated upstream
   | City_Simulation of city_simulation
+=======
+>>>>>>> Stashed changes
 
 type model = { section : section }
 
@@ -156,6 +175,7 @@ let initial_intersection =
   {
     intersection =
       Intersection.create [| []; []; []; [] |] [| 0.2; 0.2; 0.2; 0.2 |];
+<<<<<<< Updated upstream
     spf = 0.1;
     last_frame = Ptime_clock.now ();
   }
@@ -297,6 +317,26 @@ let next_state_city (screen : city_menu) =
       in
       { section = City_Simulation (create_city screen) }
   with Failure k -> { section = City_menu screen }
+=======
+    spf = 1;
+    last_frame = Ptime_clock.now ();
+  }
+
+let initial_model =
+  { section = Start_menu { selected = 0; options = [ "Single"; "City" ] } }
+
+let init _ = Command.Seq [ Enter_alt_screen ]
+>>>>>>> Stashed changes
+
+let page_down (screen : start_menu) =
+  {
+    screen with
+    selected = (screen.selected + 1) mod List.length screen.options;
+  }
+
+let page_up (screen : start_menu) =
+  let len = List.length screen.options in
+  { screen with selected = (len + (screen.selected - 1)) mod len }
 
 let update event model =
   match model.section with
@@ -307,6 +347,7 @@ let update event model =
       | Event.KeyDown Up -> ({ section = Start_menu (page_up t) }, Command.Noop)
       | Event.KeyDown enter -> (
           match t.selected with
+<<<<<<< Updated upstream
           | 0 ->
               if t.selector = Start then
                 ({ section = Single_menu initial_single_menu }, Command.Noop)
@@ -341,6 +382,14 @@ let update event model =
           else
             let text = Text_input.update t.input e in
             ({ section = City_menu { t with input = text } }, Command.Noop))
+=======
+          | 0 -> ({ section = Simulation initial_intersection }, Command.Noop)
+          | 1 -> (model, Command.Noop)
+          | _ -> (model, Command.Noop))
+      | _ -> (model, Command.Noop))
+  | Single_menu t -> (model, Command.Noop)
+  | City_menu t -> (model, Command.Noop)
+>>>>>>> Stashed changes
   | Simulation t -> (
       let new_model =
         {
@@ -361,6 +410,7 @@ let update event model =
           if delta >= t.spf then (new_model, Command.Noop)
           else (model, Command.Noop)
       | _ -> (new_model, Command.Noop))
+<<<<<<< Updated upstream
   | City_Simulation t -> (
       let new_model =
         {
@@ -395,6 +445,14 @@ let view model =
       Format.sprintf "%s \n%s"
         (CityView.render t.city t.zoom)
         (hint "Press q to quit.")
+=======
+
+let highlight fmt = Spices.(default |> fg (color "#FF06B7") |> build) fmt
+
+let view model =
+  match model.section with
+  | Simulation t -> SingleView.render t.intersection 5
+>>>>>>> Stashed changes
   | Start_menu t ->
       let choices =
         List.mapi
@@ -405,6 +463,7 @@ let view model =
           t.options
         |> String.concat "\n  "
       in
+<<<<<<< Updated upstream
       let fmt =
         if t.selector = Start then "Select a simulation mode:"
         else "Select a zoom level:"
@@ -429,5 +488,10 @@ let view model =
         (hint
            "Press Spacebar to skip and use defaults (0.2 cars/sec entering the \
             corners of the map and a city size of 3 by 3)")
+=======
+      Format.sprintf {| Select a simulation mode: 
+  %s |} choices
+  | _ -> "Hello World!"
+>>>>>>> Stashed changes
 
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model

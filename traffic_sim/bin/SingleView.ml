@@ -11,6 +11,10 @@ include View
     is a valid RGB hex code starting with # *)
 let color col fmt = Spices.(default |> fg (color col) |> build) fmt
 
+(** [color col fmt] colors the string [fmt] with the color [col]. Requires: col
+    is a valid RGB hex code starting with # *)
+let color col fmt = Spices.(default |> fg (color col) |> build) fmt
+
 (** Maps a list of elements to a list of index-element tuples, putting the head
     at (a + 1,b) and the rest at (a, b), ..., (a + length - 1, b). *)
 let map_list_loc ((a, b) : int * int) q =
@@ -18,6 +22,9 @@ let map_list_loc ((a, b) : int * int) q =
 
 let car_to_string car =
   match Car.Car.get_turn car with
+  | Left -> "L"
+  | Right -> "R"
+  | Straight -> "S"
   | Left -> "L"
   | Right -> "R"
   | Straight -> "S"
@@ -39,6 +46,9 @@ let calc_traffic_flow wld =
 let rec textify_queue loc (q : Intersection.lane_light_pair) =
   let light_color =
     match TrafficLight.TrafficLight.get_color q.light with
+    | Green -> color "#00FF00" "G"
+    | Yellow -> color "#FFFF00" "Y"
+    | Red -> color "#FF0000" "R"
     | Green -> color "#00FF00" "G"
     | Yellow -> color "#FFFF00" "Y"
     | Red -> color "#FF0000" "R"
@@ -132,12 +142,15 @@ let textify wld u w h =
   (* let lane_lights = Intersection.list_of_lane_lights wld in assert
      (List.length lane_lights = 4); *)
   set_cell canv (cx, cy) "+";
+  set_cell canv (cx, cy) "+";
   let lb, ub = (cx - (!unit_x / 8), cx + (!unit_x / 8)) in
   for x = 0 to cx do
     for y = 0 to cy do
       if (x > lb && x < ub) && y > lb && y < ub then ()
       else (
         if x = lb || x = ub || y = lb || y = ub then
+          sym_set_cell canv (x, y) "*";
+        if x = cx || y = cy then sym_set_cell canv (x, y) "*")
           sym_set_cell canv (x, y) "*";
         if x = cx || y = cy then sym_set_cell canv (x, y) "*")
     done
@@ -153,6 +166,7 @@ let assert_RI t = failwith "Not yet implemented"
     and divided all those values by 8 in the above code.*)
 let rec render wld sps =
   let wld = textify wld 48 1 1 in
+  string_of_canvas wld
   string_of_canvas wld
 (* "Traffic Flow (cars exited / step) \n\ \ N: %f\n\ \ E: %f\n\ \ S: %f\n\ \ W:
    %f\n\ %!" flow.(0) flow.(1) flow.(2) flow.(3)); let new_wld = fst
