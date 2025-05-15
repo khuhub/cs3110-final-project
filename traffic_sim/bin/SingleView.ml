@@ -1,15 +1,10 @@
 open Traffic_sim
 open Traffic_sim.Intersection
 open Unix
-open ANSITerminal
 
 let () = Random.self_init ()
 
 include View
-
-(** [color col fmt] colors the string [fmt] with the color [col]. Requires: col
-    is a valid RGB hex code starting with # *)
-let color col fmt = Spices.(default |> fg (color col) |> build) fmt
 
 (** [color col fmt] colors the string [fmt] with the color [col]. Requires: col
     is a valid RGB hex code starting with # *)
@@ -22,25 +17,23 @@ let map_list_loc ((a, b) : int * int) q =
 
 let color_of_car car =
   match Car.Car.get_colorid car with
-  | 0 -> red
-  | 1 -> blue
-  | 2 -> cyan
-  | 3 -> green
-  | 4 -> magenta
-  | 5 -> yellow
-  | 6 -> white
-  | 7 -> default
+  | 0 -> color "#403F4C"
+  | 1 -> color "#944451"
+  | 2 -> color "#E84855"
+  | 3 -> color "#F19259"
+  | 4 -> color "#F9DC5C"
+  | 5 -> color "#95B1AC"
+  | 6 -> color "#3185FC"
+  | 7 -> color "#90A1E9"
+  | 8 -> color "#EFBCD5"
   | _ -> failwith "invalid color id"
 
 let car_to_string car =
-  let color = color_of_car car in
+  let col = color_of_car car in
   match Car.Car.get_turn car with
-  | Left -> "L"
-  | Right -> "R"
-  | Straight -> "S"
-  | Left -> "L"
-  | Right -> "R"
-  | Straight -> "S"
+  | Left -> col "L"
+  | Right -> col "R"
+  | Straight -> col "S"
 
 (** NOTE: W S E N order*)
 let calc_traffic_flow wld =
@@ -59,9 +52,6 @@ let calc_traffic_flow wld =
 let rec textify_queue loc (q : Intersection.lane_light_pair) =
   let light_color =
     match TrafficLight.TrafficLight.get_color q.light with
-    | Green -> color "#00FF00" "G"
-    | Yellow -> color "#FFFF00" "Y"
-    | Red -> color "#FF0000" "R"
     | Green -> color "#00FF00" "G"
     | Yellow -> color "#FFFF00" "Y"
     | Red -> color "#FF0000" "R"
@@ -136,14 +126,14 @@ let textify_far wld u w h =
   set_cell canv (vec_add center (0, 0)) "x";
   set_cell canv (vec_add center (0, -1)) "x";
   for x = 1 to (u / w / 2) - 2 do
-    set_cell canv (vec_add center (0, x)) ([ flow_color_code flow.(1) ], "|");
+    set_cell canv (vec_add center (0, x)) (flow_color_code flow.(1) "|");
     set_cell canv
       (vec_add center (-1, (-1 * x) - 1))
-      ([ flow_color_code flow.(0) ], "|");
-    set_cell canv (vec_add center (x, -1)) ([ flow_color_code flow.(2) ], "-");
+      (flow_color_code flow.(0) "|");
+    set_cell canv (vec_add center (x, -1)) (flow_color_code flow.(2) "-");
     set_cell canv
       (vec_add center ((-1 * x) - 1, 0))
-      ([ flow_color_code flow.(3) ], "-")
+      (flow_color_code flow.(3) "-")
   done;
   canv
 
@@ -166,8 +156,6 @@ let textify wld u w h =
         if x = lb || x = ub || y = lb || y = ub then
           sym_set_cell canv (x, y) "*";
         if x = cx || y = cy then sym_set_cell canv (x, y) "*")
-          sym_set_cell canv (x, y) "*";
-        if x = cx || y = cy then sym_set_cell canv (x, y) "*")
     done
   done;
   add_lanes canv (Intersection.list_lane_lights wld) l1_loc;
@@ -181,7 +169,6 @@ let assert_RI t = failwith "Not yet implemented"
     and divided all those values by 8 in the above code.*)
 let rec render wld sps =
   let wld = textify wld 48 1 1 in
-  string_of_canvas wld
   string_of_canvas wld
 (* "Traffic Flow (cars exited / step) \n\ \ N: %f\n\ \ E: %f\n\ \ S: %f\n\ \ W:
    %f\n\ %!" flow.(0) flow.(1) flow.(2) flow.(3)); let new_wld = fst
