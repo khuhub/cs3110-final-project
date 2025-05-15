@@ -118,7 +118,7 @@ type single_menu = {
   prompts : string array;
   input : Text_input.t;
   rates : float list;
-  cars : Car.Car.t list list;
+  cars : string list;
 }
 
 type city_menu = {
@@ -180,9 +180,10 @@ let initial_intersection =
     last_frame = Ptime_clock.now ();
   }
 
-let create_intersection screen =
-  let cars = Array.of_list screen.cars in
-  let rates = Array.of_list screen.rates in
+let create_intersection rates cars =
+  let cars = List.map parse_traffic_string cars in
+  let cars = Array.of_list cars in
+  let rates = Array.of_list rates in
   {
     intersection = Intersection.create cars rates;
     spf = 0.1;
@@ -270,16 +271,14 @@ let next_state_single (screen : single_menu) =
             {
               screen with
               current_prompt = screen.current_prompt + 1;
-              cars = screen.cars @ [ parse_traffic_string input ];
+              cars = screen.cars @ [ input ];
               input = Text_input.empty ();
             };
       }
     else
-      let screen =
-        { screen with cars = screen.cars @ [ parse_traffic_string input ] }
-      in
-      { section = Simulation (create_intersection screen) }
-  with Failure k | Invalid_argument k -> { section = Single_menu screen }
+      let screen = { screen with cars = screen.cars @ [ input ] } in
+      { section = Simulation (create_intersection screen.rates screen.cars) }
+  with Failure k -> { section = Single_menu screen }
 
 let next_state_city (screen : city_menu) =
   try
