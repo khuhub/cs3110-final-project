@@ -3,24 +3,6 @@ open Minttea
 open Spices
 open Leaves
 
-let () = Random.self_init ()
-
-(** just for testing?*)
-let gencars =
-  [
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-    Car.Car.random_car ();
-  ]
-
 let help_single =
   "Watch the flow of traffic in a four-way intersection. Cars are spawned with \
    random turning directions and go through the intersection.\n\
@@ -38,19 +20,6 @@ let help_city =
 let rec list_from_string str : string list =
   String.fold_right (fun a acc -> String.make 1 a :: acc) str []
 
-let get_rate = function
-  | None -> 0.2
-  | Some (k : float) ->
-      if k >= 0.0 then k
-      else raise (Invalid_argument "Lane rates must be non-negative.")
-
-let parse_lane_rates lr =
-  Array.of_list (List.map float_of_string (String.split_on_char ' ' lr))
-
-let get_ask_for = function
-  | None -> false
-  | Some s -> s
-
 let parse_traffic_string str =
   let str = list_from_string str in
   let f elem =
@@ -64,44 +33,6 @@ let parse_traffic_string str =
           (Invalid_argument ("Unexpected character " ^ k ^ " when entering cars"))
   in
   List.map f str
-
-<<<<<<< Updated upstream
-let get_rates_from_cl ask_for_rates =
-  if ask_for_rates then (
-    let arr = [| 0.0; 0.0; 0.0; 0.0 |] in
-    print_endline "Enter North Rate:";
-    arr.(0) <- get_rate (read_float_opt ());
-    print_endline "Enter East Rate:";
-    arr.(1) <- get_rate (read_float_opt ());
-    print_endline "Enter South Rate:";
-    arr.(2) <- get_rate (read_float_opt ());
-    print_endline "Enter West Rate:";
-    arr.(3) <- get_rate (read_float_opt ());
-    arr)
-  else [| 0.2; 0.2; 0.2; 0.2 |]
-
-(* let get_traffic_from_cl ask_for_traffic = if ask_for_traffic then ( let arr =
-   [| []; []; []; [] |] in print_endline "Enter initial traffic in each lane.\n\
-   \ \n\ \ (R) is a right-turning car, \n\ \ (L) is left-turning, \n\ \ (S) is
-   going\n\ \ straight, \n\ \ (*) is a random turn direction.\n\ \ Enter as one
-   string without\n\ \ any other characters (e.g. SSLRR*) "; print_endline
-   "Enter North Traffic:"; arr.(0) <- parse_traffic_string
-   In_channel.(input_line stdin); print_endline "Enter East Traffic:"; arr.(1)
-   <- parse_traffic_string In_channel.(input_line stdin); print_endline "Enter
-   South Traffic:"; arr.(2) <- parse_traffic_string In_channel.(input_line
-   stdin); print_endline "Enter West Traffic:"; arr.(3) <- parse_traffic_string
-   In_channel.(input_line stdin); arr) else [| []; []; []; [] |] *)
-
-(* * Make sure the sps arg is > 0 !!! let run_single sps ask_for_rates
-   ask_for_traffic = try if sps < 0 then raise (Invalid_argument "Sps must
-   lowkey be positive."); let rates = get_rates_from_cl ask_for_rates in let
-   cars = get_traffic_from_cl ask_for_traffic in SingleView.render
-   (Intersection.create cars rates) (* (Intersection.create [| []; []; gencars;
-   gencars |] [| 0.0; 0.0; 0.0; 0.0 |]) *) sps with Invalid_argument k -> "Oops!
-   " ^ k *)
-
-let run_city rows cols rate sps =
-  CityView.render (City.create rows cols rate) sps
 
 type option_select =
   | Start
@@ -118,7 +49,7 @@ type single_menu = {
   prompts : string array;
   input : Text_input.t;
   rates : float list;
-  cars : string list;
+  cars : Car.Car.t list list;
 }
 
 type city_menu = {
@@ -130,18 +61,6 @@ type city_menu = {
   height : int;
   rate : float;
 }
-=======
-let run_city rows cols rate sps =
-  CityView.render (City.create rows cols rate) sps
-
-type start_menu = {
-  selected : int;
-  options : string list;
-}
-
-type single_menu = { selected : int }
-type city_menu = { selected : int }
->>>>>>> Stashed changes
 
 type simulation = {
   intersection : Intersection.t;
@@ -149,7 +68,6 @@ type simulation = {
   last_frame : Ptime.t;
 }
 
-<<<<<<< Updated upstream
 type city_simulation = {
   city : City.t;
   spf : float;
@@ -157,17 +75,12 @@ type city_simulation = {
   last_frame : Ptime.t;
 }
 
-=======
->>>>>>> Stashed changes
 type section =
   | Start_menu of start_menu
   | Single_menu of single_menu
   | City_menu of city_menu
   | Simulation of simulation
-<<<<<<< Updated upstream
   | City_Simulation of city_simulation
-=======
->>>>>>> Stashed changes
 
 type model = { section : section }
 
@@ -175,15 +88,13 @@ let initial_intersection =
   {
     intersection =
       Intersection.create [| []; []; []; [] |] [| 0.2; 0.2; 0.2; 0.2 |];
-<<<<<<< Updated upstream
     spf = 0.1;
     last_frame = Ptime_clock.now ();
   }
 
-let create_intersection rates cars =
-  let cars = List.map parse_traffic_string cars in
-  let cars = Array.of_list cars in
-  let rates = Array.of_list rates in
+let create_intersection screen =
+  let cars = Array.of_list screen.cars in
+  let rates = Array.of_list screen.rates in
   {
     intersection = Intersection.create cars rates;
     spf = 0.1;
@@ -271,14 +182,16 @@ let next_state_single (screen : single_menu) =
             {
               screen with
               current_prompt = screen.current_prompt + 1;
-              cars = screen.cars @ [ input ];
+              cars = screen.cars @ [ parse_traffic_string input ];
               input = Text_input.empty ();
             };
       }
     else
-      let screen = { screen with cars = screen.cars @ [ input ] } in
-      { section = Simulation (create_intersection screen.rates screen.cars) }
-  with Failure k -> { section = Single_menu screen }
+      let screen =
+        { screen with cars = screen.cars @ [ parse_traffic_string input ] }
+      in
+      { section = Simulation (create_intersection screen) }
+  with Failure k | Invalid_argument k -> { section = Single_menu screen }
 
 let next_state_city (screen : city_menu) =
   try
@@ -316,26 +229,6 @@ let next_state_city (screen : city_menu) =
       in
       { section = City_Simulation (create_city screen) }
   with Failure k -> { section = City_menu screen }
-=======
-    spf = 1;
-    last_frame = Ptime_clock.now ();
-  }
-
-let initial_model =
-  { section = Start_menu { selected = 0; options = [ "Single"; "City" ] } }
-
-let init _ = Command.Seq [ Enter_alt_screen ]
->>>>>>> Stashed changes
-
-let page_down (screen : start_menu) =
-  {
-    screen with
-    selected = (screen.selected + 1) mod List.length screen.options;
-  }
-
-let page_up (screen : start_menu) =
-  let len = List.length screen.options in
-  { screen with selected = (len + (screen.selected - 1)) mod len }
 
 let update event model =
   match model.section with
@@ -346,7 +239,6 @@ let update event model =
       | Event.KeyDown Up -> ({ section = Start_menu (page_up t) }, Command.Noop)
       | Event.KeyDown enter -> (
           match t.selected with
-<<<<<<< Updated upstream
           | 0 ->
               if t.selector = Start then
                 ({ section = Single_menu initial_single_menu }, Command.Noop)
@@ -381,14 +273,6 @@ let update event model =
           else
             let text = Text_input.update t.input e in
             ({ section = City_menu { t with input = text } }, Command.Noop))
-=======
-          | 0 -> ({ section = Simulation initial_intersection }, Command.Noop)
-          | 1 -> (model, Command.Noop)
-          | _ -> (model, Command.Noop))
-      | _ -> (model, Command.Noop))
-  | Single_menu t -> (model, Command.Noop)
-  | City_menu t -> (model, Command.Noop)
->>>>>>> Stashed changes
   | Simulation t -> (
       let new_model =
         {
@@ -409,7 +293,6 @@ let update event model =
           if delta >= t.spf then (new_model, Command.Noop)
           else (model, Command.Noop)
       | _ -> (new_model, Command.Noop))
-<<<<<<< Updated upstream
   | City_Simulation t -> (
       let new_model =
         {
@@ -444,14 +327,6 @@ let view model =
       Format.sprintf "%s \n%s"
         (CityView.render t.city t.zoom)
         (hint "Press q to quit.")
-=======
-
-let highlight fmt = Spices.(default |> fg (color "#FF06B7") |> build) fmt
-
-let view model =
-  match model.section with
-  | Simulation t -> SingleView.render t.intersection 5
->>>>>>> Stashed changes
   | Start_menu t ->
       let choices =
         List.mapi
@@ -462,7 +337,6 @@ let view model =
           t.options
         |> String.concat "\n  "
       in
-<<<<<<< Updated upstream
       let fmt =
         if t.selector = Start then "Select a simulation mode:"
         else "Select a zoom level:"
@@ -487,10 +361,5 @@ let view model =
         (hint
            "Press Spacebar to skip and use defaults (0.2 cars/sec entering the \
             corners of the map and a city size of 3 by 3)")
-=======
-      Format.sprintf {| Select a simulation mode: 
-  %s |} choices
-  | _ -> "Hello World!"
->>>>>>> Stashed changes
 
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model

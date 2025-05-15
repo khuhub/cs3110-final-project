@@ -25,9 +25,6 @@ let car_to_string car =
   | Left -> "L"
   | Right -> "R"
   | Straight -> "S"
-  | Left -> "L"
-  | Right -> "R"
-  | Straight -> "S"
 
 (** NOTE: W S E N order*)
 let calc_traffic_flow wld =
@@ -46,9 +43,6 @@ let calc_traffic_flow wld =
 let rec textify_queue loc (q : Intersection.lane_light_pair) =
   let light_color =
     match TrafficLight.TrafficLight.get_color q.light with
-    | Green -> color "#00FF00" "G"
-    | Yellow -> color "#FFFF00" "Y"
-    | Red -> color "#FF0000" "R"
     | Green -> color "#00FF00" "G"
     | Yellow -> color "#FFFF00" "Y"
     | Red -> color "#FF0000" "R"
@@ -151,8 +145,6 @@ let textify wld u w h =
         if x = lb || x = ub || y = lb || y = ub then
           sym_set_cell canv (x, y) "*";
         if x = cx || y = cy then sym_set_cell canv (x, y) "*")
-          sym_set_cell canv (x, y) "*";
-        if x = cx || y = cy then sym_set_cell canv (x, y) "*")
     done
   done;
   add_lanes canv (Intersection.list_lane_lights wld) l1_loc;
@@ -166,7 +158,6 @@ let assert_RI t = failwith "Not yet implemented"
     and divided all those values by 8 in the above code.*)
 let rec render wld sps =
   let wld = textify wld 48 1 1 in
-  string_of_canvas wld
   string_of_canvas wld
 (* "Traffic Flow (cars exited / step) \n\ \ N: %f\n\ \ E: %f\n\ \ S: %f\n\ \ W:
    %f\n\ %!" flow.(0) flow.(1) flow.(2) flow.(3)); let new_wld = fst
