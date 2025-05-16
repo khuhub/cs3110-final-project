@@ -1,4 +1,5 @@
 open Traffic_sim
+open CityView
 open Core
 open Command_unix
 
@@ -114,8 +115,8 @@ let run_single sps ask_for_rates ask_for_traffic =
       sps
   with Invalid_argument k -> print_endline ("Oops! " ^ k)
 
-let run_city rows cols rate sps =
-  CityView.render (City.create rows cols rate) sps
+let run_city rows cols rate sps zoom =
+  CityView.render (City.create rows cols rate) sps zoom
 
 let single =
   Command.basic ~summary:"Traffic Simulation - 4-Way Intersection"
@@ -127,13 +128,25 @@ let single =
      fun () -> run_single sps useflow usetraffic)
 
 let city =
-  Command.basic ~summary:"Traffic Simulation - City Grid"
-    ~readme:(fun () -> help_city)
-    (let%map_open.Command rows = anon ("Rows" %: int)
-     and cols = anon ("Columns" %: int)
-     and rate = anon ("Rate" %: float)
-     and sps = anon (maybe_with_default 1 ("Steps per second" %: int)) in
-     fun () -> run_city rows cols rate sps)
+  let mid =
+    Command.basic ~summary:"Mid zoom level"
+      ~readme:(fun () -> help_city)
+      (let%map_open.Command rows = anon ("Rows" %: int)
+       and cols = anon ("Columns" %: int)
+       and rate = anon ("Rate" %: float)
+       and sps = anon (maybe_with_default 1 ("Steps per second" %: int)) in
+       fun () -> run_city rows cols rate sps CityView.Mid)
+  in
+  let far =
+    Command.basic ~summary:"Far zoom level"
+      ~readme:(fun () -> help_city)
+      (let%map_open.Command rows = anon ("Rows" %: int)
+       and cols = anon ("Columns" %: int)
+       and rate = anon ("Rate" %: float)
+       and sps = anon (maybe_with_default 1 ("Steps per second" %: int)) in
+       fun () -> run_city rows cols rate sps CityView.Far)
+  in
+  Command.group ~summary:"City simulation" [ ("mid", mid); ("far", far) ]
 
 let command =
   Command.group ~summary:"Simulate Traffic"
